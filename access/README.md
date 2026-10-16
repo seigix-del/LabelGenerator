@@ -23,7 +23,7 @@ Event names are matched loosely. Extra spaces, invisible RTL marks, `آ/أ/إ/ا
 
 ## Build the database (one time)
 
-**Option A: one click.** On Windows with Access installed, double-click `access\build.vbs`. It creates `InventoryTracker.accdb`, imports the modules and builds everything.
+**Option A: one click.** On Windows with Access installed, double-click `access\build.bat`. It creates `InventoryTracker.accdb` in the same folder, imports the modules and builds everything. To put the database somewhere else, run `build.bat "D:\Data\MyInventory.accdb"` from a command prompt. The `.bat` file runs `build.vbs`, so keep both files together with the `vba` folder.
 
 **Option B: by hand.**
 1. In Access, create a new **Blank database**.

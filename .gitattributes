@@ -1,4 +1,5 @@
 # The VBA editor and Windows Script Host expect CRLF line endings.
 *.bas text eol=crlf
 *.vbs text eol=crlf
+*.bat text eol=crlf
 *.xlsx binary
