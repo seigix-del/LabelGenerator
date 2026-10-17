@@ -68,18 +68,20 @@ Totals in this file by grade:
 
 ### Grade stock form
 
-**Grade stock** opens automatically after every upload, and from the dashboard. It shows one row per grade and a TOTAL row:
+**Grade stock** opens automatically after every upload, and from the dashboard. It shows one row per grade and a TOTAL row. **G2 and G2-L are kept separate:** each has its own Total, IN, OUT and Remaining, and neither is subtracted from the other.
 
-| Column | Meaning |
-|---|---|
-| Total Qty | Number of `G<n>` rows (loss rows not included) |
-| Loss | Sum of the `L` numbers |
-| Actual Qty | Total Qty − Loss |
-| Total IN | Items whose last event is `جاهزة للالتقاط` or `استلام من العميل`, plus items not yet in any status file |
-| Total OUT | Items with any other last event |
-| **Remaining in stock** | Actual Qty − Total OUT. It turns **red when it drops below 0**. |
+| Columns | G side: plain `G2` rows | L side: `G2-L<k>` rows |
+|---|---|---|
+| Total | Number of `G2` rows (1 each) | Sum of the L numbers (`G2-L4` adds 4) |
+| IN | Total of those rows whose last event is `جاهزة للالتقاط` or `استلام من العميل`, or which have no status yet | Same rule, applied to the L rows |
+| OUT | Total of those rows with any other last event | Same rule, applied to the L rows |
+| **Remaining** | Total − OUT | Total − OUT |
 
-For example, if G2 has Total 3000 and Loss 300, then Actual is 2700. After a status upload with 500 OUT, Remaining in stock is 2200.
+For example, take 10 rows of `G2` with 4 OUT, and 2 rows of `G2-L4` where one is IN and one is OUT:
+
+| Grade | G Total | G IN | G OUT | G Remaining | L Total | L IN | L OUT | L Remaining |
+|---|---|---|---|---|---|---|---|---|
+| G2 | 10 | 6 | 4 | 6 | 8 | 4 | 4 | 4 |
 
 The footer also counts waybills without a valid grade. **Export to Excel** saves the table (`qryRpt_GradeStock`).
 
@@ -178,14 +180,12 @@ Forms and the dashboard are described in [`docs/forms-layout.md`](docs/forms-lay
    | متوسطة حائل - مسارات - M174100 | G9 | 1 | 1 | 1 | 0 |
 4. **Grade stock** opens after each upload. Grades with no rows show 0.
 
-   | After | Grade | Total Qty | Loss | Actual Qty | Total IN | Total OUT | Remaining |
-   |---|---|---|---|---|---|---|---|
-   | master only | G1 | 5 | 4 | 1 | 5 | 0 | 1 |
-   | master only | G9 | 2 | 1 | 1 | 2 | 0 | 1 |
-   | + status | G1 | 5 | 4 | 1 | 2 | 3 | **−2 (red)** |
-   | + status | G9 | 2 | 1 | 1 | 2 | 0 | 1 |
-
-   The G1 line goes negative on purpose. The sample's 4 lost out of 5 is more than real data would have, so it shows how a shortfall is flagged.
+   | After | Grade | G Total | G IN | G OUT | G Remaining | L Total | L IN | L OUT | L Remaining |
+   |---|---|---|---|---|---|---|---|---|---|
+   | master only | G1 | 5 | 5 | 0 | 5 | 4 | 4 | 0 | 4 |
+   | master only | G9 | 2 | 2 | 0 | 2 | 1 | 1 | 0 | 1 |
+   | + status | G1 | 5 | 2 | 3 | 2 | 4 | 0 | 4 | 0 |
+   | + status | G9 | 2 | 2 | 0 | 2 | 1 | 0 | 1 | 0 |
 
 ## Editing the SQL
 

@@ -24,10 +24,10 @@ Single form, unbound, 26 × 15 cm. Recalculates on `OnActivate` (`=Dash_Refresh(
 | +-------------+  +----------------+  +---------------+  +-----------------+    |
 | Last import: [Status - 2026-10-16 09:12]  Last status file - changed:[5] not found:[1]
 |                                                                                |
-| Quantity by last event              Grade stock (Remaining = Total-Loss-OUT)   |
+| Quantity by last event              Grade stock: G and L (Remaining = Total-OUT)|
 | +---------------------------+       +----------------------------------------+ |
-| | EventLabel | Loc | Qty    |       |Grade|Total|Loss|Actual| IN |OUT|Remain| |
-| | ...        | IN  | 2      |       | G1  |  5  | 4  |  1   | 2  | 3 |  -2  | |
+| | EventLabel | Loc | Qty    |       |Grd|GTot|GIN|GOUT|GRem|LTot|LIN|LOUT|LRem| |
+| | ...        | IN  | 2      |       |G1 | 5  | 2 | 3  | 2  | 4  | 0 | 4  | 0  | |
 | +---------------------------+       +----------------------------------+       |
 |                                                                                |
 | [Upload Excel][All shipments][IN warehouse][OUT of warehouse][Event rules][Unmatched]
@@ -45,7 +45,7 @@ Single form, unbound, 26 × 15 cm. Recalculates on `OnActivate` (`=Dash_Refresh(
 | `txtLastImport` | TextBox | `=Kpi_LastImport()` |
 | `txtLastChanged` / `txtLastUnmatched` | TextBox | `=Kpi_LastStatusChanged()` / `=Kpi_LastStatusUnmatched()` |
 | `lstByEvent` | ListBox, 3 columns, with headings | `qryRpt_ByEvent` |
-| `lstByGrade` | ListBox, 7 columns (Grade, Total Qty, Loss, Actual Qty, Total IN, Total OUT, Remaining in stock), with headings | `qryRpt_GradeStock` |
+| `lstByGrade` | ListBox, 9 columns (Grade, G Total, G IN, G OUT, G Remaining, L Total, L IN, L OUT, L Remaining), with headings | `qryRpt_GradeStock` |
 | `btnImport` … `btnExit` | CommandButton | `Nav_OpenImport`, `Nav_OpenShipments`, `Nav_OpenInWarehouse`, `Nav_OpenOutOfWarehouse`, `Nav_OpenEventTypes`, `Nav_OpenUnmatched`, `Nav_OpenConsigneeGrades`, `Nav_OpenImportHistory`, `Exp_InWarehouse`, `Exp_OutOfWarehouse`, `Dash_Refresh`, `Nav_Exit` |
 
 ## frmImport: upload Excel
@@ -128,15 +128,15 @@ Continuous and read-only, on `qryRpt_GradeStock`. There is one row per grade in 
 
 ```
 Header:  [Close] [Refresh] [Export to Excel]
-         Actual = Total - Loss.   Remaining in stock = Actual - OUT.
-         Grade | Total Qty | Loss | Actual Qty | Total IN | Total OUT | Remaining in stock
-Detail:  G2    |      3000 |  300 |       2700 |     2500 |       500 |               2200
+         G = plain G<n> rows (1 each).  L = G<n>-L<k> rows (k each).  Remaining = Total - OUT.
+         Grade | G Total | G IN | G OUT | G Remaining | L Total | L IN | L OUT | L Remaining
+Detail:  G2    |    10   |   6  |   4   |      6      |    8    |   4  |   4   |      4
          ...
-Footer:  TOTAL |  =Sum()   | =Sum |     =Sum   |   =Sum   |    =Sum   |              =Sum
+Footer:  TOTAL |  =Sum   | =Sum |  =Sum |    =Sum     |  =Sum   | =Sum |  =Sum |    =Sum
          Waybills without a valid grade (not counted): [n]
 ```
 
-- Total IN is shown in green and Total OUT in red. Remaining in stock is bold, and turns red when it is below 0.
+- G and L are separate, and neither is subtracted from the other. IN is shown in green, OUT in red and Remaining in bold. The L columns have a shaded background.
 - `Imp_Run` opens or requeries this form after every successful upload, whether it was a master file or a status file.
 - **Refresh** calls `=Grade_Refresh()`, and **Export to Excel** calls `=Exp_GradeStock()`.
 

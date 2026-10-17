@@ -255,11 +255,13 @@ Private Sub CreateQueries()
     SaveQuery "qryRpt_ByCity", "SELECT IIf(c.CityName Is Null, '(unknown)', c.CityName) AS City, Sum(IIf(d.InWarehouse, d.Quantity, 0)) AS InQty, Sum(IIf(d.InWarehouse, 0, d.Quantity)) AS OutQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCities AS c ON o.CityID = c.CityID GROUP BY IIf(c.CityName Is Null, '(unknown)', c.CityName) ORDER BY Sum(IIf(d.InWarehouse, d.Quantity, 0)) DESC"
     ' Grades: a plain G<n> row counts 1 towards that grade's quantity; a G<n>-L<k>
     ' row is a loss row - it adds k to Loss and nothing to the quantity.
-    ' Grade stock: Actual = Total - Loss; Remaining in stock = Actual - OUT.
-    SaveQuery "qryGradeTotals", "SELECT d.GradeCode, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS TotalQty, Sum(d.LossQty) AS LossQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty FROM tblOrderDetails AS d WHERE d.GradeCode Is Not Null GROUP BY d.GradeCode"
-    SaveQuery "qryRpt_GradeStock", "SELECT g.GradeCode AS Grade, IIf(t.TotalQty Is Null, 0, t.TotalQty) AS TotalQty, IIf(t.LossQty Is Null, 0, t.LossQty) AS Loss, " & _
-        "IIf(t.TotalQty Is Null, 0, t.TotalQty) - IIf(t.LossQty Is Null, 0, t.LossQty) AS ActualQty, IIf(t.InQty Is Null, 0, t.InQty) AS TotalIn, IIf(t.OutQty Is Null, 0, t.OutQty) AS TotalOut, " & _
-        "IIf(t.TotalQty Is Null, 0, t.TotalQty) - IIf(t.LossQty Is Null, 0, t.LossQty) - IIf(t.OutQty Is Null, 0, t.OutQty) AS RemainingInStock " & _
+    ' Grade stock: G<n> rows and G<n>-L<k> rows are tracked side by side, each
+    ' with its own Total / IN / OUT / Remaining (Remaining = Total - OUT).
+    ' A G row counts its Quantity (1); an L row counts its L number.
+    SaveQuery "qryGradeTotals", "SELECT d.GradeCode, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS GTotal, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS GIn, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS GOut, " & _
+        "Sum(IIf(d.LossQty > 0, d.LossQty, 0)) AS LTotal, Sum(IIf(d.LossQty > 0, IIf(d.InWarehouse, d.LossQty, 0), 0)) AS LIn, Sum(IIf(d.LossQty > 0, IIf(d.InWarehouse, 0, d.LossQty), 0)) AS LOut FROM tblOrderDetails AS d WHERE d.GradeCode Is Not Null GROUP BY d.GradeCode"
+    SaveQuery "qryRpt_GradeStock", "SELECT g.GradeCode AS Grade, IIf(t.GTotal Is Null, 0, t.GTotal) AS GTotal, IIf(t.GIn Is Null, 0, t.GIn) AS GIn, IIf(t.GOut Is Null, 0, t.GOut) AS GOut, IIf(t.GTotal Is Null, 0, t.GTotal - t.GOut) AS GRemain, " & _
+        "IIf(t.LTotal Is Null, 0, t.LTotal) AS LTotal, IIf(t.LIn Is Null, 0, t.LIn) AS LIn, IIf(t.LOut Is Null, 0, t.LOut) AS LOut, IIf(t.LTotal Is Null, 0, t.LTotal - t.LOut) AS LRemain " & _
         "FROM tblGrades AS g LEFT JOIN qryGradeTotals AS t ON g.GradeCode = t.GradeCode ORDER BY g.SortOrder"
     SaveQuery "qryRpt_LastMasterFileByGrade", "SELECT IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode) AS Grade, Sum(IIf(s.LossQty > 0, 0, 1)) AS Qty, Sum(IIf(s.LossQty Is Null, 0, s.LossQty)) AS Loss FROM tblStage_Master AS s " & _
         "GROUP BY IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode), IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2))) ORDER BY IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2)))"
@@ -361,13 +363,13 @@ Private Sub BuildMainMenu()
     ctl.ColumnHeads = True
     ctl.ColumnWidths = CStr(7 * TW) & ";" & CStr(2 * TW) & ";" & CStr(2 * TW)
 
-    AddLabel frm, acDetail, "lblByGrade", "Grade stock (Remaining = Total - Loss - OUT)", 13 * TW, 5.4 * TW, 12 * TW, True
+    AddLabel frm, acDetail, "lblByGrade", "Grade stock: G and L (Remaining = Total - OUT)", 13 * TW, 5.4 * TW, 12 * TW, True
     Set ctl = CreateControl(frm.Name, acListBox, acDetail, , , 13 * TW, 6 * TW, 12.5 * TW, 6 * TW)
     ctl.Name = "lstByGrade"
     ctl.RowSource = "qryRpt_GradeStock"
-    ctl.ColumnCount = 7
+    ctl.ColumnCount = 9
     ctl.ColumnHeads = True
-    ctl.ColumnWidths = CStr(1.4 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(1.6 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(2 * TW)
+    ctl.ColumnWidths = CStr(1.2 * TW) & ";" & CStr(1.35 * TW) & ";" & CStr(1.25 * TW) & ";" & CStr(1.25 * TW) & ";" & CStr(1.45 * TW) & ";" & CStr(1.35 * TW) & ";" & CStr(1.25 * TW) & ";" & CStr(1.25 * TW) & ";" & CStr(1.45 * TW)
 
     ' Menu buttons (two rows)
     Dim btns As Variant
@@ -481,14 +483,14 @@ End Sub
 ' ---- frmGradeStock (one row per grade + totals footer) ------------------
 Private Sub BuildGradeStockForm()
     Dim frm As Form, flds As Variant, caps As Variant, wid As Variant
-    Dim i As Long, x As Double, fc As Object
+    Dim i As Long, x As Double
 
-    flds = Array("Grade", "TotalQty", "Loss", "ActualQty", "TotalIn", "TotalOut", "RemainingInStock")
-    caps = Array("Grade", "Total Qty", "Loss", "Actual Qty", "Total IN", "Total OUT", "Remaining in stock")
-    wid = Array(2, 2.6, 2.4, 2.8, 2.6, 2.6, 3.6)
+    flds = Array("Grade", "GTotal", "GIn", "GOut", "GRemain", "LTotal", "LIn", "LOut", "LRemain")
+    caps = Array("Grade", "G Total", "G IN", "G OUT", "G Remaining", "L Total", "L IN", "L OUT", "L Remaining")
+    wid = Array(1.8, 2.2, 2, 2, 2.6, 2.2, 2, 2, 2.6)
 
     Set frm = BuildContinuous("qryRpt_GradeStock", "Grade stock", flds, caps, wid, 1.9)
-    AddLabel frm, acHeader, "lblHelp", "Actual = Total - Loss.   Remaining in stock = Actual - OUT.", 0.2 * TW, 1.05 * TW, 14 * TW
+    AddLabel frm, acHeader, "lblHelp", "G = plain G<n> rows (1 each).  L = G<n>-L<k> rows (k each).  Remaining = Total - OUT.", 0.2 * TW, 1.05 * TW, 18 * TW
     AddButton frm, acHeader, "btnClose", "Close", "=Nav_CloseActive()", 0.2 * TW, 0.15 * TW, 2.5 * TW
     AddButton frm, acHeader, "btnRefresh", "Refresh", "=Grade_Refresh()", 2.9 * TW, 0.15 * TW, 2.5 * TW
     AddButton frm, acHeader, "btnExport", "Export to Excel", "=Exp_GradeStock()", 5.6 * TW, 0.15 * TW, 4 * TW
@@ -513,14 +515,16 @@ Private Sub BuildGradeStockForm()
     AddLabel frm, acFooter, "lblNoGrade", "Waybills without a valid grade (not counted):", 0.2 * TW, 0.8 * TW, 7 * TW
     AddTextBox frm, acFooter, "txtNoGrade", "=DCount(""*"",""tblOrderDetails"",""GradeCode Is Null"")", 7.3 * TW, 0.8 * TW, 2 * TW, , True
 
-    ' Remaining in stock: bold, red when below zero.
-    With frm.Controls("txtRemainingInStock")
-        .FontBold = True
-        Set fc = .FormatConditions.Add(acFieldValue, acLessThan, "0")
-        fc.ForeColor = CLR_OUT
-    End With
-    frm.Controls("txtTotalIn").ForeColor = CLR_IN
-    frm.Controls("txtTotalOut").ForeColor = CLR_OUT
+    ' IN green, OUT red, Remaining bold; L columns on a shaded background.
+    Dim side As Variant
+    For Each side In Array("G", "L")
+        frm.Controls("txt" & side & "In").ForeColor = CLR_IN
+        frm.Controls("txt" & side & "Out").ForeColor = CLR_OUT
+        frm.Controls("txt" & side & "Remain").FontBold = True
+    Next side
+    For Each side In Array("LTotal", "LIn", "LOut", "LRemain")
+        frm.Controls("txt" & side).BackColor = CLR_PANEL
+    Next side
 
     frm.AllowEdits = False
     frm.AllowAdditions = False
