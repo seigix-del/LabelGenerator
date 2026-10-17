@@ -13,8 +13,9 @@ Option Explicit
 '
 '   STATUS  (carrier update)   raqm al-tatabbu | madinat al-wijha |
 '                              akhir hadath | ism al-mursal ilayh
-'           -> every waybill gets its latest event; tblEventTypes.IsInWarehouse
-'              decides whether that event means IN or OUT of the warehouse.
+'           -> every waybill gets its latest event. Only the IN events in
+'              modConfig.SeedEvents (ready for pickup / received from
+'              customer) mean IN warehouse; any other event means OUT.
 '              Status changes are written to tblStatusHistory, waybills that
 '              are not in the database go to tblUnmatched.
 '
@@ -320,6 +321,8 @@ Private Sub ProcessStatus(ByVal db As DAO.Database, ByRef res As ImportResult)
     Dim rs As DAO.Recordset
 
     res.NewEventTypes = RunAction(db, "qryImp_AppendEventTypes")
+    EnforceInRule db
+    RunAction db, "qryAct_RecalcInWarehouse"            ' heal any stale flags
     RunAction db, "qryImp_AppendCities"
     RunAction db, "qryImp_AppendCustomers"
     res.RowsUnmatched = RunAction(db, "qryImp_AppendUnmatched")
@@ -381,7 +384,7 @@ Private Function BuildSummary(ByRef res As ImportResult) As String
         s = s & "Status changed:           " & res.RowsChanged & vbCrLf & _
                 "No change:                " & res.RowsUnchanged & vbCrLf & _
                 "Not found in database:    " & res.RowsUnmatched & "  (see Unmatched)" & vbCrLf & _
-                "New event types created:  " & res.NewEventTypes & IIf(res.NewEventTypes > 0, "  (counted as OUT - review in Event Rules)", "") & vbCrLf & vbCrLf & _
+                "New event types created:  " & res.NewEventTypes & IIf(res.NewEventTypes > 0, "  (counted as OUT)", "") & vbCrLf & vbCrLf & _
                 "This file -> IN warehouse:  " & res.FileInCount & vbCrLf & _
                 "This file -> OUT:           " & res.FileOutCount & vbCrLf
     End If
@@ -391,11 +394,23 @@ Private Function BuildSummary(ByRef res As ImportResult) As String
     BuildSummary = s
 End Function
 
-' Re-applies the IN/OUT rule after event types were edited.
+' Sets tblEventTypes.IsInWarehouse from the fixed rule: True only for the
+' IN events in SeedEvents(), False for every other event.
+Public Sub EnforceInRule(ByVal db As DAO.Database)
+    Dim e As Variant, inKeys As String
+    For Each e In SeedEvents()
+        If e(1) Then inKeys = inKeys & IIf(Len(inKeys) > 0, ",", "") & SqlText(NormKey(e(0)))
+    Next e
+    db.Execute "UPDATE tblEventTypes SET IsInWarehouse = True WHERE EventKey IN (" & inKeys & ") AND IsInWarehouse = False", dbFailOnError
+    db.Execute "UPDATE tblEventTypes SET IsInWarehouse = False WHERE EventKey NOT IN (" & inKeys & ") AND IsInWarehouse = True", dbFailOnError
+End Sub
+
+' Applies the IN/OUT rule to every waybill that already has an event.
 Public Function RecalcInWarehouse() As Long
     On Error GoTo EH
     Dim db As DAO.Database
     Set db = CurrentDb
+    EnforceInRule db
     RecalcInWarehouse = RunAction(db, "qryAct_RecalcInWarehouse")
 ExitHere:
     Exit Function

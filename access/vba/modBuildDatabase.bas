@@ -36,6 +36,7 @@ Public Sub BuildInventoryDatabase(Optional ByVal dropExistingTables As Boolean =
     DBEngine.Idle dbRefreshCache     ' make ADO-created tables visible to DAO
     SeedData
     CreateQueries
+    RecalcInWarehouse                ' apply the fixed IN/OUT rule to existing data
     CreateForms
     SetStartupOptions
 
@@ -415,15 +416,15 @@ Private Sub BuildHistoryForm()
         Array(4, 4, 1.4, 4, 1.4, 3.2, 8)
 End Sub
 
-' ---- frmEventTypes (editable rules + form-level validation) -------------
+' ---- frmEventTypes (event list; the IN/OUT flag is fixed and read-only) --
 Private Sub BuildEventTypesForm()
     Dim frm As Form
-    Set frm = BuildContinuous("qryEventTypesList", "Event rules - which last event means IN warehouse", _
+    Set frm = BuildContinuous("qryEventTypesList", "Event rules - only 2 events mean IN warehouse", _
         Array("EventName", "IsInWarehouse", "SortOrder", "Notes"), _
         Array("Last event (as in status file)", "IN warehouse?", "Sort", "Notes"), _
         Array(8, 2.6, 1.6, 8), 1.6)
 
-    AddLabel frm, acHeader, "lblHelp", "Tick 'IN warehouse?' for events that mean the item is (back) in stock. Every other event counts as OUT.", 0.2 * TW, 0.2 * TW, 18 * TW
+    AddLabel frm, acHeader, "lblHelp", "IN warehouse = ready for pickup or received from customer. Every other event is OUT (fixed rule).", 0.2 * TW, 0.2 * TW, 18 * TW
     AddButton frm, acHeader, "btnClose", "Close", "=Nav_CloseActive()", 18.5 * TW, 0.15 * TW, 2.5 * TW
 
     With frm.Controls("txtEventName")
@@ -444,7 +445,7 @@ Private Sub BuildEventTypesForm()
     frm.AllowEdits = True
     frm.AllowAdditions = True
     frm.AllowDeletions = False
-    frm.AfterUpdate = "=Evt_AfterUpdate()"
+    frm.Controls("txtIsInWarehouse").Locked = True    ' rule is fixed in code
 
     ' BeforeUpdate needs Cancel, so this one form gets a small class module.
     frm.BeforeUpdate = "[Event Procedure]"

@@ -276,19 +276,6 @@ Public Function Shp_ClearFilter() As Boolean
 End Function
 
 ' ---------------------------------------------------------------------------
-' frmEventTypes
-' ---------------------------------------------------------------------------
-
-' AfterUpdate of an event rule: push the new IN/OUT flag to every waybill
-' that currently sits on that event.
-Public Function Evt_AfterUpdate() As Boolean
-    Dim n As Long
-    n = RecalcInWarehouse()
-    If n > 0 Then ShowInfo n & " waybill(s) moved between IN and OUT after this rule change."
-    Dash_Refresh
-End Function
-
-' ---------------------------------------------------------------------------
 ' Exports
 ' ---------------------------------------------------------------------------
 

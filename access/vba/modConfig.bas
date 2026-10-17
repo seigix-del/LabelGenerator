@@ -83,8 +83,10 @@ End Function
 '   "jahiza lil-iltiqat"   (ready for pickup)       -> IN warehouse
 '   "istilam min al-amil"  (received from customer) -> IN warehouse
 '   "al-taslim al-niha'i"  (final delivery)         -> OUT
-' Any event not listed here is created automatically as OUT the first time
-' it appears in a status file; the rule can be changed in frmEventTypes.
+' FIXED RULE: only the events flagged True here are IN warehouse. Every
+' other event (including any new one that appears in a status file) is OUT.
+' EnforceInRule re-applies this on every status import, so the flag cannot
+' drift through manual edits to tblEventTypes.
 ' ---------------------------------------------------------------------------
 Public Function SeedEvents() As Variant
     SeedEvents = Array( _

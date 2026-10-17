@@ -15,9 +15,11 @@ The two files are linked by the waybill number: `بوليصة الشحن` in the
 |---|---|
 | `جاهزة للالتقاط` (ready for pickup) | **IN** warehouse |
 | `استلام من العميل` (received from customer) | **IN** warehouse |
-| anything else, e.g. `التسليم النهائي` (final delivery) | **OUT** |
+| **anything else**, e.g. `التسليم النهائي` (final delivery), `قيد التوصيل`, or any event the carrier adds later | **OUT** |
 
-The rule lives in `tblEventTypes.IsInWarehouse`, not in code. The first time a new event appears in a status file, it is added automatically as **OUT** and the import summary tells you. To change the rule, open **Event rules** and tick or untick *IN warehouse?*. Every waybill on that event is recalculated straight away.
+This rule is fixed. The two IN events are defined in `modConfig.SeedEvents`. Every status import re-applies the rule to `tblEventTypes` and to every waybill, so a manual edit to the table cannot make another event count as IN. A new event that appears in a status file is added automatically as **OUT**, and the import summary tells you.
+
+A waybill that has been loaded from the inventory list but has not yet appeared in any status file has no `آخر حدث` yet. It counts as **IN**, because it is in your inventory list.
 
 Event names are matched loosely. Extra spaces, invisible RTL marks, `آ/أ/إ/ا`, `ى/ي` and `ة/ه` are all treated as the same, so small typing differences in the carrier's file do not create duplicate events.
 
@@ -69,7 +71,7 @@ erDiagram
 | `tblCustomers` | `CustomerID`, unique `CustomerName` | Consignees. `CustomerCode` is parsed from the end of the name (`… - M174562`). | `اسم المرسل إليه` |
 | `tblCities` | `CityID`, unique `CityName` | Destination cities | `مدينة الوجهة` |
 | `tblProducts` | `ProductID`, unique `ProductDescription` | Shipment contents. `ProductCode` is the part after the last `\` (`G9-L1`). | `وصف محتويات الشحنة` |
-| `tblEventTypes` | `EventID`, unique `EventKey` | Carrier events plus the **IsInWarehouse** rule | `آخر حدث` |
+| `tblEventTypes` | `EventID`, unique `EventKey` | Carrier events. `IsInWarehouse` is True only for the two IN events. | `آخر حدث` |
 | `tblOrders` | `OrderID`, unique `ReferenceNo` | One row per reference number | `رقم المرجع`, `رقم المرجع الثانوي` |
 | `tblOrderDetails` | `DetailID`, unique `Waybill` | **One row per waybill (the inventory item):** current event, `InWarehouse`, quantity | `بوليصة الشحن` / `رقم التتبع` |
 | `tblStatusHistory` | `HistoryID` | Every change of event: from, to, IN/OUT before and after, and which file it came from | n/a |
@@ -88,7 +90,7 @@ All queries are listed in [`sql/02_queries.sql`](sql/02_queries.sql).
 |---|---|
 | Import, inventory list | `qryImp_ClearStageMaster` → `qryImp_AppendProducts` → `qryImp_AppendOrders` → `qryImp_UpdateOrdersSecondaryRef` → `qryImp_AppendDetails` |
 | Import, status update | `qryImp_ClearStageStatus` → `qryImp_AppendEventTypes` → `qryImp_AppendCities` → `qryImp_AppendCustomers` → `qryImp_AppendUnmatched` → `qryImp_AppendHistory` → `qryImp_UpdateDetailsStatus` → `qryImp_UpdateOrdersCustomer` → `qryImp_UpdateOrdersCity` |
-| Maintenance | `qryAct_RecalcInWarehouse` (after a rule change), `qryAct_PurgeOldUnmatched` (deletes rows older than 90 days) |
+| Maintenance | `qryAct_RecalcInWarehouse` (re-applies the rule to every waybill; runs on each status import), `qryAct_PurgeOldUnmatched` (deletes rows older than 90 days) |
 | Lists for forms | `qryShipmentsList`, `qryShipmentHistory`, `qryEventTypesList`, `qryImportBatchesList` |
 | Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
 
@@ -117,7 +119,6 @@ Forms and the dashboard are described in [`docs/forms-layout.md`](docs/forms-lay
    - 1 new event type (`قيد التوصيل`, added as OUT)
    - This file: IN 2, OUT 3
    - Inventory now: **IN 3** (two IN events, plus `EBUXSL2079500004`, which was not in the status file) and **OUT 3**
-3. Open **Event rules**, tick `قيد التوصيل` as IN, and save the row. The dashboard should change to IN 4, OUT 2.
 
 ## Editing the SQL
 

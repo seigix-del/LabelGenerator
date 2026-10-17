@@ -106,14 +106,15 @@ Continuous and read-only, on `qryShipmentHistory`. It opens with `DetailID=<n>`.
 
 The columns are: Waybill, From event, From (IN/OUT), To event, To, Recorded, Source file.
 
-## frmEventTypes: event rules (editable)
+## frmEventTypes: event rules (IN/OUT flag read-only)
 
 Continuous form on `qryEventTypesList`. Edits and additions are allowed, but deletions are not, because deleting an event would break the history.
 
-The columns are **Last event** (text), **IN warehouse?** (check box), **Sort** (number) and **Notes**.
+The columns are **Last event** (text), **IN warehouse?** (check box, locked), **Sort** (number) and **Notes**.
+
+The *IN warehouse?* box cannot be edited. It is ticked only for `جاهزة للالتقاط` and `استلام من العميل`, and every other event is OUT. The rule is set in `modConfig.SeedEvents` and re-applied on every status import.
 
 - `Form_BeforeUpdate`, in the form's own module, checks three things. The name is required. The normalised `EventKey` must be unique, so the same event cannot be added twice. Sort must be numeric. It then writes the cleaned `EventName` and `EventKey`.
-- `AfterUpdate = =Evt_AfterUpdate()` runs `qryAct_RecalcInWarehouse` and reports how many waybills moved between IN and OUT.
 
 ## frmUnmatched
 
