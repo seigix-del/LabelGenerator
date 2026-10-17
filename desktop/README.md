@@ -8,6 +8,8 @@ It uses the same rules as the Access and Power BI versions:
 - **Grades** G1–G9 and G11–G13 are read from `وصف محتويات الشحنة`, after `\`, `/` or `//`. A `G2` row counts 1 on the **G** side. A `G2-L4` row counts 4 on the **L** side only. A one- or two-letter prefix is ignored, so `MG3-L1` counts as G3 with a loss of 1. Remaining = Total − OUT, worked out separately for G and L.
 - Event names are matched loosely. Hidden characters, Arabic presentation forms, diacritics, hamza variants and extra spaces are ignored, and an event that contains `جاهزة للالتقاط` or `استلام من العميل` also counts as IN.
 - The consignee comes from `اسم المرسل إليه`.
+- **Pallet group** is `الرقم المرجعي الثانوي` (for example `MKK-SEP30CH`). For each group, the **Pallet groups** page shows its items, IN, OUT, **remaining** (items − OUT) and loss. Each group is marked **Not started** (nothing OUT), **Partial** or **Complete** (every item OUT). Click a group to list its waybills.
+- **Headers** are matched by meaning, not only exact text. `رقم المرجع`, `الرقم المرجعي` and other columns containing `مرجع` count as the reference, and if the header also contains `ثانوي` it is the pallet group. The **Files** page shows which header was read for each field.
 - When a waybill is in several files, the newest file wins (then the last row in that file).
 
 ## Install
@@ -24,7 +26,8 @@ It uses the same rules as the Access and Power BI versions:
 ## Use
 
 - **Upload Excel files…** (or ⌘O, or drag files onto the window) to add inventory lists and status updates. The type is detected from the headers. Add new status files whenever you get them.
-- **Pages:** Dashboard, Grade stock, Consignee × grade, Shipments (search, IN/OUT and grade filters), Unmatched, and Files (remove files or start over).
+- **Pages:** Dashboard, Grade stock, Consignee × grade, Shipments (search, IN/OUT, grade and pallet filters), Pallet groups, Unmatched, and Files (remove files or start over, and see which columns were read).
+- **Large projects:** tested with 300,000 waybills. All the totals are calculated in about 1.5 s, and switching pages takes well under a second. Tables show the first few hundred rows, and **Show all** lists the rest. Totals always include every row.
 - **Copy table** pastes into Excel. **Export to Excel** saves the current table as `.xlsx`.
 - On first launch the app shows sample data, marked **Sample data**. Your first upload replaces it.
 

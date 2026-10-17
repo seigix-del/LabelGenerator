@@ -63,3 +63,68 @@ for (const t of ["جاهزة للالتقاط", "ﺟﺎﻫﺰﺓ ﻟﻼﻟﺘﻘ
                  "جاهزه  للالتقاط ", "استلام من العميل", "جاهزة للالتقاط - فرع نجران"]) assert(L.isInEvent(t), t);
 for (const t of ["التسليم النهائي", "قيد التوصيل", ""]) assert(!L.isInEvent(t), t);
 console.log("Real-file cases passed.");
+
+// --- real headers: الرقم المرجعي / الرقم المرجعي الثانوي ---
+{
+  const r = L.readSheet([
+    ["بوليصة الشحن", "الرقم المرجعي", "وصف محتويات الشحنة", "الرقم المرجعي الثانوي"],
+    ["EBUXSL2082091026", "26524-2", "نقطة توزيع شرورة \\\\ MG3-L1", "MKK-SEP30CH"],
+  ]);
+  assert.strictEqual(r.kind, "master");
+  assert.strictEqual(r.rows[0].ReferenceNo, "26524-2");
+  assert.strictEqual(r.rows[0].SecondaryRef, "MKK-SEP30CH");
+  // unknown wording still found by the fuzzy rules
+  const f = L.readSheet([["رقم البوليصه", "المرجع", "مرجع ثانوي للشحنة", "المحتويات"], ["X1", "1-1", "P1", "\\\\ G2"]]);
+  assert.deepStrictEqual([f.rows[0].Waybill, f.rows[0].ReferenceNo, f.rows[0].SecondaryRef, f.rows[0].Contents], ["X1", "1-1", "P1", "\\\\ G2"]);
+}
+// IN spelling variants and negations
+for (const t of ["جاهزة للاتقاط", "جاهز للالتقاط", "تم الاستلام من العميل"]) assert(L.isInEvent(t), t);
+for (const t of ["لم يتم الاستلام من العميل", "فشل الاستلام من العميل", "تعذر الاستلام من العميل"]) assert(!L.isInEvent(t), t);
+
+// --- pallet groups ---
+{
+  const files = [
+    { name: "m", lastModified: 1, kind: "master", rows: [
+      { Waybill: "A1", ReferenceNo: "1", Contents: "x \\\\ G3", SecondaryRef: "MKK-SEP30CH" },
+      { Waybill: "A2", ReferenceNo: "2", Contents: "x \\\\ G3", SecondaryRef: "MKK-SEP30CH" },
+      { Waybill: "A3", ReferenceNo: "3", Contents: "x \\\\ MG3-L1", SecondaryRef: "MKK-SEP30CH" },
+      { Waybill: "B1", ReferenceNo: "4", Contents: "x \\\\ G5", SecondaryRef: "PAL-2" },
+      { Waybill: "C1", ReferenceNo: "5", Contents: "x \\\\ G5", SecondaryRef: "" },
+    ] },
+    { name: "s", lastModified: 2, kind: "status", rows: [
+      { Waybill: "A1", LastEvent: "التسليم النهائي" },
+      { Waybill: "A2", LastEvent: "جاهزة للاتقاط" },
+      { Waybill: "A3", LastEvent: "التسليم النهائي" },
+      { Waybill: "B1", LastEvent: "التسليم النهائي" },
+    ] },
+  ];
+  const { shipments } = L.compute(files);
+  const pg = Object.fromEntries(L.palletGroups(shipments).map((p) => [p.pallet, p]));
+  const mkk = pg["MKK-SEP30CH"];
+  assert.deepStrictEqual([mkk.items, mkk.inCount, mkk.outCount, mkk.remaining, mkk.loss, mkk.status], [2, 1, 1, 1, 1, "Partial"]);
+  assert.strictEqual(pg["PAL-2"].status, "Complete");
+  assert.strictEqual(pg[L.NO_PALLET].status, "Not started");
+}
+
+// --- scale: 300,000 waybills ---
+{
+  const N = 300000, mrows = [], srows = [];
+  for (let i = 0; i < N; i++) {
+    const g = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13][i % 12];
+    mrows.push({ Waybill: "EBUX" + i, ReferenceNo: "R" + i, Contents: `نقطة توزيع \\\\ G${g}${i % 50 === 0 ? "-L2" : ""}`, SecondaryRef: "PAL-" + (i % 5000) });
+    if (i % 3) srows.push({ Waybill: "EBUX" + i, LastEvent: i % 3 === 1 ? "التسليم النهائي" : "جاهزة للالتقاط", CityName: "حائل", ConsigneeName: "مدرسة " + (i % 2000) + " - M" + (i % 2000) });
+  }
+  const t0 = Date.now();
+  const { shipments, unmatched } = L.compute([{ name: "m", lastModified: 1, kind: "master", rows: mrows }, { name: "s", lastModified: 2, kind: "status", rows: srows }]);
+  const sm = L.summary(shipments, unmatched);
+  const gs = L.gradeStock(shipments);
+  const pg = L.palletGroups(shipments);
+  L.consigneeMatrix(shipments);
+  const ms = Date.now() - t0;
+  assert.strictEqual(sm.total, N);
+  assert.strictEqual(sm.outCount, srows.filter((r) => r.LastEvent === "التسليم النهائي").length);
+  assert.strictEqual(pg.length, 5000);
+  assert.strictEqual(gs.total.gTotal + gs.total.lTotal / 2, N);
+  console.log(`Scale test: ${N.toLocaleString()} waybills computed in ${ms} ms.`);
+}
+console.log("Pallet and header cases passed.");

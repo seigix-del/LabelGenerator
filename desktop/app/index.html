@@ -20,6 +20,7 @@
         <button type="button" data-view="grades"><span class="ico">▤</span>Grade stock</button>
         <button type="button" data-view="consignees"><span class="ico">▦</span>Consignee × grade</button>
         <button type="button" data-view="shipments"><span class="ico">≡</span>Shipments<span class="count" id="nav-shipments"></span></button>
+        <button type="button" data-view="pallets"><span class="ico">▣</span>Pallet groups<span class="count" id="nav-pallets"></span></button>
         <button type="button" data-view="unmatched"><span class="ico">⚠︎</span>Unmatched<span class="count" id="nav-unmatched"></span></button>
         <button type="button" data-view="files"><span class="ico">⇪</span>Files<span class="count" id="nav-files"></span></button>
       </nav>
@@ -35,7 +36,10 @@
           <h1 id="page-title">Dashboard</h1>
           <span class="sample-pill" id="sample-pill" hidden>Sample data</span>
         </div>
-        <div class="toolbar-tools" id="toolbar-tools"></div>
+        <div class="toolbar-tools">
+          <div class="toolbar-tools" id="filters"></div>
+          <div class="toolbar-tools" id="toolbar-tools"></div>
+        </div>
       </header>
       <section class="view" id="view" aria-live="polite"></section>
     </main>

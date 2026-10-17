@@ -8,7 +8,9 @@
     sample: false,
     view: "dashboard",
     filter: { consignee: "", city: "" },
-    ship: { q: "", loc: "all", grade: "", limit: 300 },
+    ship: { q: "", loc: "all", grade: "", pallet: "", limit: 300 },
+    pal: { q: "", status: "remaining", limit: 500 },
+    mxLimit: 300,
     metric: "gTotal",
     confirmClear: false,
     data: null,         // cached compute() result
@@ -16,7 +18,11 @@
 
   const TITLES = {
     dashboard: "Dashboard", grades: "Grade stock", consignees: "Consignee × grade",
-    shipments: "Shipments", unmatched: "Unmatched", files: "Files",
+    shipments: "Shipments", pallets: "Pallet groups", unmatched: "Unmatched", files: "Files",
+  };
+  const FIELD_NAMES = {
+    Waybill: "Waybill", ReferenceNo: "Reference", Contents: "Contents", SecondaryRef: "Pallet group",
+    CityName: "City", LastEvent: "Last event", ConsigneeName: "Consignee",
   };
   const METRICS = [
     ["gTotal", "G Total"], ["gRem", "G Remaining"], ["lTotal", "L Total"], ["lRem", "L Remaining"],
@@ -64,7 +70,7 @@
   function sampleFiles() {
     return window.SAMPLE_FILES.map((f) => {
       const r = I.readSheet(f.aoa);
-      return { name: f.name, lastModified: f.lastModified, kind: r.kind, sheet: "Sheet1", rows: r.rows, sample: true };
+      return { name: f.name, lastModified: f.lastModified, kind: r.kind, sheet: "Sheet1", headers: r.headers, rows: r.rows, sample: true };
     });
   }
 
@@ -72,17 +78,19 @@
     S.files = files;
     S.sample = sample;
     S.data = null;
+    S.version = (S.version || 0) + 1;
+    S.filter = { consignee: "", city: "" };
   }
 
   function data() {
     if (!S.data) {
       const { shipments, unmatched } = I.compute(S.files);
-      S.data = { shipments, unmatched };
+      S.data = { shipments, unmatched, palletCount: new Set(shipments.map((s) => s.pallet)).size };
     }
     const { shipments, unmatched } = S.data;
     const f = S.filter;
     const filtered = shipments.filter((s) => (!f.consignee || s.consignee === f.consignee) && (!f.city || s.city === f.city));
-    return { all: shipments, shipments: filtered, unmatched };
+    return { all: shipments, shipments: filtered, unmatched, palletCount: S.data.palletCount };
   }
 
   // ---------------------------------------------------------------- uploads
@@ -90,11 +98,13 @@
     const added = [], errors = [];
     for (const file of list) {
       if (file.name.startsWith("~$")) continue;
+      toast(`Reading ${file.name} (${(file.size / 1048576).toFixed(1)} MB)…`, 600000);
+      await new Promise((r) => setTimeout(r, 30)); // let the message paint before the parse blocks
       if (!/\.(xlsx|xlsm|xls)$/i.test(file.name)) { errors.push(`${file.name}: not an Excel file.`); continue; }
       try {
         const res = I.parseWorkbook(XLSX, new Uint8Array(await file.arrayBuffer()));
         if (res.error) { errors.push(`${file.name}: ${res.error}`); continue; }
-        added.push({ name: file.name, lastModified: file.lastModified, kind: res.kind, sheet: res.sheet, rows: res.rows });
+        added.push({ name: file.name, lastModified: file.lastModified, kind: res.kind, sheet: res.sheet, headers: res.headers, rows: res.rows });
       } catch (e) {
         errors.push(`${file.name}: could not be read (${e.message}).`);
       }
@@ -113,15 +123,22 @@
   window.openFilePicker = () => $("file-input").click();
 
   // ---------------------------------------------------------------- toolbar
-  function filterControls(d) {
-    const consignees = [...new Set(d.all.map((s) => s.consignee))].sort((a, b) => a.localeCompare(b, "ar"));
-    const cities = [...new Set(d.all.map((s) => s.city).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ar"));
-    const opt = (v, sel) => `<option value="${esc(v)}"${v === sel ? " selected" : ""}>${esc(v)}</option>`;
-    return `
+  // Built once per data load (thousands of consignees make this expensive), then kept in the DOM.
+  const COLLATOR = new Intl.Collator("ar");
+  let filtersVersion = -1;
+  function renderFilters(d) {
+    if (filtersVersion === S.version) return;
+    filtersVersion = S.version;
+    const consignees = [...new Set(d.all.map((s) => s.consignee))].sort(COLLATOR.compare);
+    const cities = [...new Set(d.all.map((s) => s.city).filter(Boolean))].sort(COLLATOR.compare);
+    $("filters").innerHTML = `
       <label class="field" for="f-consignee">Consignee
-        <select id="f-consignee" dir="auto"><option value="">All</option>${consignees.map((c) => opt(c, S.filter.consignee)).join("")}</select></label>
+        <input id="f-consignee" list="dl-consignee" dir="auto" placeholder="All ${fmt(consignees.length)} — type to search" value="${esc(S.filter.consignee)}" autocomplete="off">
+        <datalist id="dl-consignee">${consignees.map((c) => `<option value="${esc(c)}"></option>`).join("")}</datalist></label>
       <label class="field" for="f-city">City
-        <select id="f-city" dir="auto"><option value="">All</option>${cities.map((c) => opt(c, S.filter.city)).join("")}</select></label>`;
+        <select id="f-city" dir="auto"><option value="">All</option>${cities.map((c) =>
+          `<option value="${esc(c)}"${c === S.filter.city ? " selected" : ""}>${esc(c)}</option>`).join("")}</select></label>`;
+    S.consigneeSet = new Set(consignees);
   }
 
   function tableTools() {
@@ -146,6 +163,7 @@
         ${kpi("OUT", fmt(sm.outCount), "Any other last event", "out")}
         ${kpi("Total waybills", fmt(sm.total), "On the inventory list")}
         ${kpi("% IN", `${pct}%`, `${fmt(sm.inCount)} of ${fmt(sm.total)}`, "", `<div class="split"><div class="a" style="width:${pct}%"></div><div class="b" style="width:${100 - pct}%"></div></div>`)}
+        ${kpi("Pallet groups open", fmt(sm.palletsWithRemaining), `of ${fmt(sm.pallets)} still have items IN`, sm.palletsWithRemaining ? "warn" : "")}
         ${kpi("Unmatched", fmt(sm.unmatched), "In a status file, not in the inventory list", sm.unmatched ? "warn" : "")}
         ${kpi("Last status update", sm.lastStatusDate ? new Date(sm.lastStatusDate).toLocaleDateString("en-GB", { dateStyle: "medium" }) : "—", "Newest status file used", "", "", "date")}
       </div>
@@ -209,13 +227,14 @@
           ${mx.consignees.length ? `
           <table data-export="Consignee x grade">
             <thead><tr><th>اسم المرسل إليه</th><th>Code</th>${I.GRADES.map((g) => `<th class="num">${g}</th>`).join("")}<th class="num">Total</th></tr></thead>
-            <tbody>${mx.consignees.map((c) => `
+            <tbody>${mx.consignees.slice(0, S.mxLimit).map((c) => `
               <tr><td dir="auto">${esc(c.name)}</td><td class="mono">${esc(c.code)}</td>
                 ${I.GRADES.map((g) => numCell(c.cells.get(g)[k])).join("")}${numCell(c.total[k], "rem")}</tr>`).join("")}
             </tbody>
             <tfoot><tr><td>TOTAL</td><td></td>${I.GRADES.map((g) => numCell(mx.colTotals.get(g)[k])).join("")}${numCell(mx.grand[k], "rem")}</tr></tfoot>
           </table>` : `<div class="empty">No graded waybills match the filters.</div>`}
         </div>
+        ${mx.consignees.length > S.mxLimit ? `<div class="more">Showing ${fmt(S.mxLimit)} of ${fmt(mx.consignees.length)} consignees (totals include all). <button type="button" class="btn small" data-action="mx-more">Show all</button></div>` : ""}
       </div>`;
   }
 
@@ -223,6 +242,7 @@
     const q = I.normKey(S.ship.q);
     let rows = d.shipments.filter((s) =>
       (S.ship.loc === "all" || s.location === S.ship.loc) &&
+      (!S.ship.pallet || s.pallet === S.ship.pallet) &&
       (!S.ship.grade || s.grade === S.ship.grade) &&
       (!q || [s.waybill, s.reference, s.secondaryRef, s.contents, s.lastEvent, s.city, s.consignee, s.customerCode]
         .some((v) => I.normKey(v).includes(q))));
@@ -238,14 +258,16 @@
             ${seg}
             <select id="ship-grade" aria-label="Grade"><option value="">All grades</option>${I.GRADES.map((g) =>
               `<option${g === S.ship.grade ? " selected" : ""}>${g}</option>`).join("")}</select>
+            ${S.ship.pallet ? `<span class="filter-chip">Pallet group: <b class="mono">${esc(S.ship.pallet)}</b>
+              <button type="button" class="chip-x" data-action="clear-pallet" aria-label="Clear pallet filter">×</button></span>` : ""}
           </div>
           <span class="sub">${fmt(total)} waybill${total === 1 ? "" : "s"}</span>
         </div>
         <div class="table-wrap">
           ${total ? `<table data-export="Shipments">
-            <thead><tr><th>Waybill</th><th>Reference</th><th>Secondary ref</th><th>Contents</th><th>Grade</th><th>Last event</th><th>Location</th><th>City</th><th>اسم المرسل إليه</th><th>Status file date</th></tr></thead>
+            <thead><tr><th>Waybill</th><th>الرقم المرجعي</th><th>Pallet group</th><th>Contents</th><th>Grade</th><th>Last event</th><th>Location</th><th>City</th><th>اسم المرسل إليه</th><th>Status file date</th></tr></thead>
             <tbody>${rows.map((s) => `
-              <tr><td class="mono">${esc(s.waybill)}</td><td class="mono">${esc(s.reference)}</td><td class="mono">${esc(s.secondaryRef)}</td>
+              <tr><td class="mono">${esc(s.waybill)}</td><td class="mono">${esc(s.reference)}</td><td class="mono">${s.secondaryRef ? `<button type="button" class="link" data-pallet="${esc(s.pallet)}">${esc(s.secondaryRef)}</button>` : ""}</td>
                 <td dir="auto" class="wrap">${esc(s.contents)}</td>
                 <td>${s.grade ? `<span class="chip">${s.grade}</span>` : ""}${s.lossQty ? ` <span class="chip l">L${s.lossQty}</span>` : ""}</td>
                 <td dir="auto">${esc(s.lastEvent)}</td><td><span class="pill ${s.inWarehouse ? "in" : "out"}">${s.location}</span></td>
@@ -254,6 +276,57 @@
         </div>
         ${total > rows.length ? `<div class="more">Showing ${fmt(rows.length)} of ${fmt(total)}. <button type="button" class="btn small" data-action="more">Show all</button></div>` : ""}
       </div>`;
+  }
+
+  function viewPallets(d) {
+    const all = I.palletGroups(d.shipments);
+    const q = I.normKey(S.pal.q);
+    const tally = { all: all.length, remaining: 0, Complete: 0, Partial: 0, "Not started": 0 };
+    let itemsLeft = 0;
+    for (const p of all) {
+      if (p.remaining > 0) { tally.remaining++; itemsLeft += p.remaining; }
+      if (p.status in tally) tally[p.status]++;
+    }
+    let rows = all.filter((p) =>
+      (S.pal.status === "all" || (S.pal.status === "remaining" ? p.remaining > 0 : p.status === S.pal.status)) &&
+      (!q || I.normKey(p.pallet).includes(q)));
+    const total = rows.length;
+    rows = rows.slice(0, S.pal.limit);
+    const seg = `<div class="seg" role="group" aria-label="Status">${[["remaining", "Has remaining"], ["Partial", "Partial"], ["Not started", "Not started"], ["Complete", "Complete"], ["all", "All"]]
+      .map(([v, l]) => `<button type="button" data-palstatus="${v}" aria-pressed="${S.pal.status === v}">${l} <span class="seg-n">${fmt(tally[v])}</span></button>`).join("")}</div>`;
+    const statusPill = (st) => `<span class="pill ${st === "Complete" ? "out" : st === "Not started" ? "in" : "part"}">${st}</span>`;
+    return `
+      <div class="kpis">
+        ${kpi("Pallet groups", fmt(all.length), "الرقم المرجعي الثانوي")}
+        ${kpi("With items remaining", fmt(tally.remaining), "At least one item still IN", tally.remaining ? "warn" : "")}
+        ${kpi("Items remaining", fmt(itemsLeft), "G items still IN across all groups", "in")}
+        ${kpi("Complete", fmt(tally.Complete), "Every item is OUT", "out")}
+      </div>
+      <div class="panel">
+        <div class="panel-head" style="flex-wrap:wrap">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input type="search" id="pal-q" placeholder="Search pallet group…" value="${esc(S.pal.q)}">${seg}
+          </div>
+          <span class="sub">${fmt(total)} group${total === 1 ? "" : "s"} · click a group to see its waybills</span>
+        </div>
+        <div class="table-wrap">
+          ${total ? `<table data-export="Pallet groups">
+            <thead><tr><th>Pallet group</th><th>Status</th><th class="num">Items</th><th class="num">IN</th><th class="num">OUT</th><th class="num">Remaining</th><th>Shipped</th>
+              <th class="num">Loss (L)</th><th class="num">Loss OUT</th><th>Grades</th><th class="num">Consignees</th><th>Last update</th></tr></thead>
+            <tbody>${rows.map((p) => `
+              <tr class="clickable" data-pallet="${esc(p.pallet)}">
+                <td class="mono"><b>${esc(p.pallet)}</b></td><td>${statusPill(p.status)}</td>
+                ${numCell(p.items)}${numCell(p.inCount, "in-num")}${numCell(p.outCount, "out-num")}${numCell(p.remaining, "rem")}
+                <td><div class="meter" title="${Math.round(p.pctOut * 100)}% OUT"><div style="width:${p.pctOut * 100}%"></div></div></td>
+                ${numCell(p.loss, "")}${numCell(p.lossOut, "out-num")}
+                <td>${p.grades.map((g) => `<span class="chip">${g}</span>`).join(" ")}</td>
+                ${numCell(p.consignees)}<td>${fmtDate(p.lastUpdate)}</td></tr>`).join("")}
+            </tbody></table>` : `<div class="empty">No pallet groups match.</div>`}
+        </div>
+        ${total > rows.length ? `<div class="more">Showing ${fmt(rows.length)} of ${fmt(total)}. <button type="button" class="btn small" data-action="pal-more">Show all</button></div>` : ""}
+      </div>
+      <p class="foot-note">Items, IN, OUT and Remaining count plain G rows (1 each). Remaining = Items − OUT. Loss is the sum of the L numbers in the group.
+        Status: <b>Not started</b> = nothing OUT yet, <b>Partial</b> = some OUT, <b>Complete</b> = every item OUT.</p>`;
   }
 
   function viewUnmatched(d) {
@@ -288,10 +361,12 @@
           <span class="sub">${S.sample ? `<button type="button" class="btn small" data-action="upload">Upload your files</button>` : clear}</span></div>
         <div class="table-wrap">
           ${files.length ? `<table>
-            <thead><tr><th>File</th><th>Type</th><th>Sheet</th><th class="num">Rows</th><th>Modified</th><th></th></tr></thead>
+            <thead><tr><th>File</th><th>Type</th><th>Sheet</th><th class="num">Rows</th><th>Columns read</th><th>Modified</th><th></th></tr></thead>
             <tbody>${files.map((f) => `<tr><td>${esc(f.name)}</td>
               <td><span class="chip kind-${f.kind}">${f.kind === "master" ? "Inventory list" : "Status update"}</span></td>
-              <td>${esc(f.sheet)}</td><td class="num">${fmt(f.rows.length)}</td><td>${fmtDate(f.lastModified)}</td>
+              <td>${esc(f.sheet)}</td><td class="num">${fmt(f.rows.length)}</td>
+              <td class="wrap cols">${f.headers ? Object.entries(f.headers).map(([l, h]) => `<span class="colmap"><b>${FIELD_NAMES[l] || l}</b> ← <span dir="auto">${esc(h)}</span></span>`).join("") : "—"}</td>
+              <td>${fmtDate(f.lastModified)}</td>
               <td>${S.sample ? "" : `<button type="button" class="btn small" data-remove="${esc(f.name)}">Remove</button>`}</td></tr>`).join("")}</tbody>
           </table>` : `<div class="empty">No files yet. Upload an inventory list (بوليصة الشحن …) and a status update (رقم التتبع, آخر حدث …).
             <p><button type="button" class="btn small" data-action="sample">Load sample data</button></p></div>`}
@@ -312,6 +387,7 @@
       else b.removeAttribute("aria-current");
     });
     $("nav-shipments").textContent = fmt(d.all.length);
+    $("nav-pallets").textContent = fmt(d.palletCount);
     $("nav-unmatched").textContent = d.unmatched.length ? fmt(d.unmatched.length) : "";
     $("nav-files").textContent = fmt(S.files.length);
     $("page-title").textContent = TITLES[S.view];
@@ -320,12 +396,19 @@
       ? "Showing sample data. Upload your inventory list and status files to replace it."
       : `${fmt(S.files.filter((f) => f.kind === "master").length)} inventory, ${fmt(S.files.filter((f) => f.kind === "status").length)} status file(s) loaded.`;
 
-    const withFilters = ["dashboard", "grades", "consignees", "shipments"].includes(S.view);
-    const withTable = ["grades", "consignees", "shipments", "unmatched"].includes(S.view);
-    $("toolbar-tools").innerHTML = (withFilters ? filterControls(d) : "") + (withTable ? tableTools() : "");
+    const withFilters = ["dashboard", "grades", "consignees", "shipments", "pallets"].includes(S.view);
+    const withTable = ["grades", "consignees", "shipments", "pallets", "unmatched"].includes(S.view);
+    renderFilters(d);
+    $("filters").hidden = !withFilters;
+    $("toolbar-tools").innerHTML = withTable ? tableTools() : "";
 
-    const views = { dashboard: viewDashboard, grades: viewGrades, consignees: viewConsignees, shipments: viewShipments, unmatched: viewUnmatched, files: viewFiles };
-    $("view").innerHTML = views[S.view](d);
+    // Files loaded by version 1.0 were read before the الرقم المرجعي / الثانوي columns were recognised.
+    const stale = S.files.filter((f) => !f.sample && !f.headers && f.kind === "master");
+    const notice = stale.length && S.view !== "files"
+      ? `<div class="notice">Re-upload ${stale.map((f) => `<b>${esc(f.name)}</b>`).join(", ")} so the reference number and pallet group (الرقم المرجعي / الرقم المرجعي الثانوي) are read. It was loaded by an older version of the app.</div>`
+      : "";
+    const views = { dashboard: viewDashboard, grades: viewGrades, consignees: viewConsignees, shipments: viewShipments, pallets: viewPallets, unmatched: viewUnmatched, files: viewFiles };
+    $("view").innerHTML = notice + views[S.view](d);
   }
 
   function go(view) {
@@ -371,10 +454,15 @@
   }
 
   document.addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-view],[data-action],[data-metric],[data-loc],[data-remove]");
+    const t = e.target.closest("[data-view],[data-action],[data-metric],[data-loc],[data-remove],[data-pallet],[data-palstatus]");
     if (!t) return;
     if (t.dataset.view) return go(t.dataset.view);
     if (t.dataset.metric) { S.metric = t.dataset.metric; return render(); }
+    if (t.dataset.palstatus) { S.pal.status = t.dataset.palstatus; S.pal.limit = 500; return render(); }
+    if (t.dataset.pallet !== undefined) {
+      S.ship = { ...S.ship, pallet: t.dataset.pallet, q: "", loc: "all", grade: "", limit: 300 };
+      return go("shipments");
+    }
     if (t.dataset.loc) { S.ship.loc = t.dataset.loc; S.ship.limit = 300; return render(); }
     if (t.dataset.remove) {
       setFiles(S.files.filter((f) => f.name !== t.dataset.remove), false);
@@ -387,6 +475,9 @@
       case "copy": return copyTable();
       case "export": return exportTable();
       case "more": S.ship.limit = Infinity; return render();
+      case "pal-more": S.pal.limit = Infinity; return render();
+      case "mx-more": S.mxLimit = Infinity; return render();
+      case "clear-pallet": S.ship.pallet = ""; return render();
       case "clear": S.confirmClear = true; return render();
       case "clear-no": S.confirmClear = false; return render();
       case "clear-yes":
@@ -400,7 +491,12 @@
   });
 
   document.addEventListener("change", (e) => {
-    if (e.target.id === "f-consignee") { S.filter.consignee = e.target.value; render(); }
+    if (e.target.id === "f-consignee") {
+      const v = e.target.value.trim();
+      if (v && !S.consigneeSet.has(v)) { toast(`No consignee named "${v}". Pick one from the list.`); e.target.value = S.filter.consignee; return; }
+      S.filter.consignee = v;
+      render();
+    }
     if (e.target.id === "f-city") { S.filter.city = e.target.value; render(); }
     if (e.target.id === "ship-grade") { S.ship.grade = e.target.value; render(); }
     if (e.target.id === "file-input") { addFiles([...e.target.files]); e.target.value = ""; }
@@ -408,14 +504,15 @@
 
   let searchTimer;
   document.addEventListener("input", (e) => {
-    if (e.target.id !== "ship-q") return;
+    const id = e.target.id;
+    if (id !== "ship-q" && id !== "pal-q") return;
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-      S.ship.q = e.target.value;
-      S.ship.limit = 300;
+      if (id === "ship-q") { S.ship.q = e.target.value; S.ship.limit = 300; }
+      else { S.pal.q = e.target.value; S.pal.limit = 500; }
       const pos = e.target.selectionStart;
       render();
-      const box = $("ship-q");
+      const box = $(id);
       box.focus();
       box.setSelectionRange(pos, pos);
     }, 200);
