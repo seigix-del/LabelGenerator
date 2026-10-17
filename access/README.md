@@ -43,7 +43,7 @@ Excel must be installed, because the importer reads workbooks through Excel auto
 
 ## Grades, quantity and loss
 
-The contents column (`وصف محتويات الشحنة`) ends in a grade code after a separator, such as `نقطة توزيع المجاردة \\ G1`, `… / G1` or `… // G1-L4`. Any of `\`, `/` or `//` works. The grades are **G1 to G13**.
+The contents column (`وصف محتويات الشحنة`) ends in a grade code after a separator, such as `نقطة توزيع المجاردة \\ G1`, `… / G1` or `… // G1-L4`. Any of `\`, `/` or `//` works. The grades are **G1–G9 and G11–G13**; there is no G10. They are listed in `modConfig.GRADE_LIST` and in the `tblGrades` table. Any other code, including G10, counts as *no grade* and is reported separately instead of being added to a grade.
 
 | Code in the row | Meaning |
 |---|---|
@@ -66,10 +66,27 @@ Totals in this file by grade:
 
 **Export grade totals** on the upload screen saves the same table to Excel (query `qryRpt_LastMasterFileByGrade`).
 
+### Grade stock form
+
+**Grade stock** opens automatically after every upload, and from the dashboard. It shows one row per grade and a TOTAL row:
+
+| Column | Meaning |
+|---|---|
+| Total Qty | Number of `G<n>` rows (loss rows not included) |
+| Loss | Sum of the `L` numbers |
+| Actual Qty | Total Qty − Loss |
+| Total IN | Items whose last event is `جاهزة للالتقاط` or `استلام من العميل`, plus items not yet in any status file |
+| Total OUT | Items with any other last event |
+| **Remaining in stock** | Actual Qty − Total OUT. It turns **red when it drops below 0**. |
+
+For example, if G2 has Total 3000 and Loss 300, then Actual is 2700. After a status upload with 500 OUT, Remaining in stock is 2200.
+
+The footer also counts waybills without a valid grade. **Export to Excel** saves the table (`qryRpt_GradeStock`).
+
 Where to see the totals for the whole database:
-- The dashboard list **Quantity and loss by grade**.
+- The **Grade stock** form, and the same table on the dashboard.
 - The **Consignee x grade** form, which shows each consignee and grade with Qty, Loss, Qty IN and Qty OUT.
-- **Export to Excel** on that form, which saves one workbook with three sheets: the detail list, a quantity table (one column per grade, G1 to G13) and a loss table in the same layout.
+- **Export to Excel** on that form, which saves one workbook with three sheets: the detail list, a quantity table (one column per grade, G1–G9 and G11–G13) and a loss table in the same layout.
 
 Re-importing the inventory file updates the grade and loss of waybills that are already in the database.
 
@@ -101,11 +118,12 @@ erDiagram
 | Table | Key | What it holds | Excel source |
 |---|---|---|---|
 | `tblCustomers` | `CustomerID`, unique `CustomerName` | Consignees. `CustomerCode` is parsed from the end of the name (`… - M174562`). | `اسم المرسل إليه` |
+| `tblGrades` | `GradeCode` | The valid grades (G1–G9, G11–G13) in display order | n/a |
 | `tblCities` | `CityID`, unique `CityName` | Destination cities | `مدينة الوجهة` |
 | `tblProducts` | `ProductID`, unique `ProductDescription` | Shipment contents. `ProductCode` is the part after the last `\` (`G9-L1`). | `وصف محتويات الشحنة` |
 | `tblEventTypes` | `EventID`, unique `EventKey` | Carrier events. `IsInWarehouse` is True only for the two IN events. | `آخر حدث` |
 | `tblOrders` | `OrderID`, unique `ReferenceNo` | One row per reference number | `رقم المرجع`, `رقم المرجع الثانوي` |
-| `tblOrderDetails` | `DetailID`, unique `Waybill` | **One row per waybill (the inventory item):** current event, `InWarehouse`, quantity, `GradeCode` (G1 to G13), `LossQty` (the n in `-Ln`) | `بوليصة الشحن` / `رقم التتبع` |
+| `tblOrderDetails` | `DetailID`, unique `Waybill` | **One row per waybill (the inventory item):** current event, `InWarehouse`, quantity, `GradeCode` (references `tblGrades`), `LossQty` (the n in `-Ln`) | `بوليصة الشحن` / `رقم التتبع` |
 | `tblStatusHistory` | `HistoryID` | Every change of event: from, to, IN/OUT before and after, and which file it came from | n/a |
 | `tblImportBatches` | `BatchID` | One row per uploaded file, with its counts | n/a |
 | `tblUnmatched` | `UnmatchedID` | Status rows whose waybill is not in the database | n/a |
@@ -124,7 +142,7 @@ All queries are listed in [`sql/02_queries.sql`](sql/02_queries.sql).
 | Import, status update | `qryImp_ClearStageStatus` → `qryImp_AppendEventTypes` → `qryImp_AppendCities` → `qryImp_AppendCustomers` → `qryImp_AppendUnmatched` → `qryImp_AppendHistory` → `qryImp_UpdateDetailsStatus` → `qryImp_UpdateOrdersCustomer` → `qryImp_UpdateOrdersCity` |
 | Maintenance | `qryAct_RecalcInWarehouse` (re-applies the rule to every waybill; runs on each status import), `qryAct_PurgeOldUnmatched` (deletes rows older than 90 days) |
 | Lists for forms | `qryShipmentsList`, `qryShipmentHistory`, `qryEventTypesList`, `qryImportBatchesList` |
-| Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryRpt_ByGrade`, `qryRpt_LastMasterFileByGrade`, `qryRpt_ByConsigneeGrade`, `qryRpt_ConsigneeGradeQty` (crosstab), `qryRpt_ConsigneeGradeLoss` (crosstab), `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
+| Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryGradeTotals` → `qryRpt_GradeStock`, `qryRpt_LastMasterFileByGrade`, `qryRpt_ByConsigneeGrade`, `qryRpt_ConsigneeGradeQty` (crosstab), `qryRpt_ConsigneeGradeLoss` (crosstab), `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
 
 ## VBA modules
 
@@ -158,6 +176,16 @@ Forms and the dashboard are described in [`docs/forms-layout.md`](docs/forms-lay
    | (no consignee yet) | G9 | 1 | 0 | 1 | 0 |
    | ثانوية منار العلم الأهلية - مسارات - M174562 | G1 | 5 | 4 | 2 | 3 |
    | متوسطة حائل - مسارات - M174100 | G9 | 1 | 1 | 1 | 0 |
+4. **Grade stock** opens after each upload. Grades with no rows show 0.
+
+   | After | Grade | Total Qty | Loss | Actual Qty | Total IN | Total OUT | Remaining |
+   |---|---|---|---|---|---|---|---|
+   | master only | G1 | 5 | 4 | 1 | 5 | 0 | 1 |
+   | master only | G9 | 2 | 1 | 1 | 2 | 0 | 1 |
+   | + status | G1 | 5 | 4 | 1 | 2 | 3 | **−2 (red)** |
+   | + status | G9 | 2 | 1 | 1 | 2 | 0 | 1 |
+
+   The G1 line goes negative on purpose. The sample's 4 lost out of 5 is more than real data would have, so it shows how a shortfall is flagged.
 
 ## Editing the SQL
 

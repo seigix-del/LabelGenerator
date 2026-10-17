@@ -77,6 +77,8 @@ Private Sub CreateTables()
     RunDDL "tblImportBatches", "CREATE TABLE tblImportBatches (BatchID COUNTER CONSTRAINT PK_ImportBatches PRIMARY KEY, ImportType TEXT(20) NOT NULL, FileName TEXT(255), ImportedOn DATETIME DEFAULT Now(), ImportedBy TEXT(100), RowsRead LONG DEFAULT 0, RowsInserted LONG DEFAULT 0, RowsUpdated LONG DEFAULT 0, RowsUnmatched LONG DEFAULT 0, RowsSkipped LONG DEFAULT 0, FileInCount LONG DEFAULT 0, FileOutCount LONG DEFAULT 0)"
 
     ' --- transactional tables ---------------------------------------------
+    RunDDL "tblGrades", "CREATE TABLE tblGrades (GradeCode TEXT(10) CONSTRAINT PK_Grades PRIMARY KEY, SortOrder LONG NOT NULL)"
+
     RunDDL "tblOrders", "CREATE TABLE tblOrders (OrderID COUNTER CONSTRAINT PK_Orders PRIMARY KEY, ReferenceNo TEXT(50) NOT NULL, SecondaryRef TEXT(100), CustomerID LONG, CityID LONG, CreatedBatchID LONG, CreatedOn DATETIME DEFAULT Now(), " & _
         "CONSTRAINT FK_Orders_Customers FOREIGN KEY (CustomerID) REFERENCES tblCustomers (CustomerID), " & _
         "CONSTRAINT FK_Orders_Cities FOREIGN KEY (CityID) REFERENCES tblCities (CityID), " & _
@@ -132,8 +134,24 @@ Private Sub UpgradeSchema()
     EnsureColumn "tblStage_Master", "GradeCode", "TEXT(10)"
     EnsureColumn "tblStage_Master", "LossQty", "LONG DEFAULT 0"
     CurrentProject.Connection.Execute "UPDATE tblOrderDetails SET LossQty = 0 WHERE LossQty Is Null"
-    On Error Resume Next             ' index may already exist
+    SeedGrades
+    ' Grades no longer in GRADE_LIST (e.g. G10) become "no grade".
+    CurrentProject.Connection.Execute "UPDATE tblOrderDetails AS d LEFT JOIN tblGrades AS g ON d.GradeCode = g.GradeCode SET d.GradeCode = Null, d.LossQty = 0 WHERE g.GradeCode Is Null AND d.GradeCode Is Not Null"
+    On Error Resume Next             ' index / constraint may already exist
     CurrentProject.Connection.Execute "CREATE INDEX IX_Details_Grade ON tblOrderDetails (GradeCode)"
+    CurrentProject.Connection.Execute "ALTER TABLE tblOrderDetails ADD CONSTRAINT FK_Details_Grades FOREIGN KEY (GradeCode) REFERENCES tblGrades (GradeCode)"
+End Sub
+
+' tblGrades holds exactly the grades in GRADE_LIST, in numeric order.
+Private Sub SeedGrades()
+    Dim g As Variant, cn As Object
+    Set cn = CurrentProject.Connection
+    cn.Execute "DELETE FROM tblGrades WHERE InStr('," & GRADE_LIST & ",', ',' & GradeCode & ',') = 0"
+    For Each g In Split(GRADE_LIST, ",")
+        On Error Resume Next         ' duplicate key = grade already there
+        cn.Execute "INSERT INTO tblGrades (GradeCode, SortOrder) VALUES ('" & g & "', " & Val(Mid$(g, 2)) & ")"
+        On Error GoTo 0
+    Next g
 End Sub
 
 Private Sub EnsureColumn(ByVal tableName As String, ByVal columnName As String, ByVal columnType As String)
@@ -237,8 +255,12 @@ Private Sub CreateQueries()
     SaveQuery "qryRpt_ByCity", "SELECT IIf(c.CityName Is Null, '(unknown)', c.CityName) AS City, Sum(IIf(d.InWarehouse, d.Quantity, 0)) AS InQty, Sum(IIf(d.InWarehouse, 0, d.Quantity)) AS OutQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCities AS c ON o.CityID = c.CityID GROUP BY IIf(c.CityName Is Null, '(unknown)', c.CityName) ORDER BY Sum(IIf(d.InWarehouse, d.Quantity, 0)) DESC"
     ' Grades: a plain G<n> row counts 1 towards that grade's quantity; a G<n>-L<k>
     ' row is a loss row - it adds k to Loss and nothing to the quantity.
-    SaveQuery "qryRpt_ByGrade", "SELECT IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty " & _
-        "FROM tblOrderDetails AS d GROUP BY IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)))"
+    ' Grade stock: Actual = Total - Loss; Remaining in stock = Actual - OUT.
+    SaveQuery "qryGradeTotals", "SELECT d.GradeCode, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS TotalQty, Sum(d.LossQty) AS LossQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty FROM tblOrderDetails AS d WHERE d.GradeCode Is Not Null GROUP BY d.GradeCode"
+    SaveQuery "qryRpt_GradeStock", "SELECT g.GradeCode AS Grade, IIf(t.TotalQty Is Null, 0, t.TotalQty) AS TotalQty, IIf(t.LossQty Is Null, 0, t.LossQty) AS Loss, " & _
+        "IIf(t.TotalQty Is Null, 0, t.TotalQty) - IIf(t.LossQty Is Null, 0, t.LossQty) AS ActualQty, IIf(t.InQty Is Null, 0, t.InQty) AS TotalIn, IIf(t.OutQty Is Null, 0, t.OutQty) AS TotalOut, " & _
+        "IIf(t.TotalQty Is Null, 0, t.TotalQty) - IIf(t.LossQty Is Null, 0, t.LossQty) - IIf(t.OutQty Is Null, 0, t.OutQty) AS RemainingInStock " & _
+        "FROM tblGrades AS g LEFT JOIN qryGradeTotals AS t ON g.GradeCode = t.GradeCode ORDER BY g.SortOrder"
     SaveQuery "qryRpt_LastMasterFileByGrade", "SELECT IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode) AS Grade, Sum(IIf(s.LossQty > 0, 0, 1)) AS Qty, Sum(IIf(s.LossQty Is Null, 0, s.LossQty)) AS Loss FROM tblStage_Master AS s " & _
         "GROUP BY IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode), IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2))) ORDER BY IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2)))"
     SaveQuery "qryRpt_ByConsigneeGrade", "SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty " & _
@@ -247,10 +269,10 @@ Private Sub CreateQueries()
         "ORDER BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)))"
     SaveQuery "qryRpt_ConsigneeGradeQty", "TRANSFORM Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS TotalQty " & _
         "FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
-        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13')"
+        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G11','G12','G13')"
     SaveQuery "qryRpt_ConsigneeGradeLoss", "TRANSFORM Sum(d.LossQty) AS Loss SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, Sum(d.LossQty) AS TotalLoss " & _
         "FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
-        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13')"
+        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G11','G12','G13')"
     SaveQuery "qryRpt_InWarehouse", "SELECT Waybill, ReferenceNo, SecondaryRef, ProductDescription, EventName, CityName, CustomerName, LastUpdated FROM qryShipmentsList WHERE InWarehouse = True"
     SaveQuery "qryRpt_OutOfWarehouse", "SELECT Waybill, ReferenceNo, SecondaryRef, ProductDescription, EventName, CityName, CustomerName, LastUpdated FROM qryShipmentsList WHERE InWarehouse = False"
     SaveQuery "qryRpt_LastStatusBatch", "SELECT TOP 1 * FROM tblImportBatches WHERE ImportType = 'Status' ORDER BY BatchID DESC"
@@ -293,7 +315,8 @@ Private Sub CreateForms()
         Array("BatchID", "ImportType", "ImportedOn", "RowsRead", "RowsInserted", "RowsUpdated", "RowsUnmatched", "RowsSkipped", "FileInCount", "FileOutCount", "FileName"), _
         Array("Batch", "Type", "Imported", "Read", "New", "Changed", "Unmatched", "Skipped", "File IN", "File OUT", "File"), _
         Array(1.4, 1.8, 3.2, 1.4, 1.4, 1.6, 1.8, 1.6, 1.6, 1.6, 7)
-    BuildListForm FRM_GRADES, "Quantity and loss by consignee and grade (G1-G13)", "qryRpt_ByConsigneeGrade", _
+    BuildGradeStockForm
+    BuildListForm FRM_GRADES, "Quantity and loss by consignee and grade", "qryRpt_ByConsigneeGrade", _
         Array("Consignee", "CustomerCode", "Grade", "Qty", "Loss", "InQty", "OutQty"), _
         Array(HeaderAliases(COL_CONSIGNEE)(0), "Code", "Grade", "Qty", "Loss", "Qty IN", "Qty OUT"), _
         Array(9, 2.4, 2, 1.8, 1.8, 1.8, 1.8), "=Exp_ConsigneeGrades()", "Export to Excel"
@@ -306,7 +329,7 @@ Private Sub BuildMainMenu()
     frm.Caption = APP_TITLE & " - Dashboard"
     frm.Width = 26 * TW
     frm.OnActivate = "=Dash_Refresh()"
-    frm.Section(acDetail).Height = 15 * TW
+    frm.Section(acDetail).Height = 16 * TW
     frm.Section(acDetail).BackColor = CLR_WHITE
 
     TitleBar frm, acDetail, APP_TITLE, 26
@@ -338,13 +361,13 @@ Private Sub BuildMainMenu()
     ctl.ColumnHeads = True
     ctl.ColumnWidths = CStr(7 * TW) & ";" & CStr(2 * TW) & ";" & CStr(2 * TW)
 
-    AddLabel frm, acDetail, "lblByGrade", "Quantity and loss by grade", 13 * TW, 5.4 * TW, 8 * TW, True
+    AddLabel frm, acDetail, "lblByGrade", "Grade stock (Remaining = Total - Loss - OUT)", 13 * TW, 5.4 * TW, 12 * TW, True
     Set ctl = CreateControl(frm.Name, acListBox, acDetail, , , 13 * TW, 6 * TW, 12.5 * TW, 6 * TW)
     ctl.Name = "lstByGrade"
-    ctl.RowSource = "qryRpt_ByGrade"
-    ctl.ColumnCount = 5
+    ctl.RowSource = "qryRpt_GradeStock"
+    ctl.ColumnCount = 7
     ctl.ColumnHeads = True
-    ctl.ColumnWidths = CStr(3 * TW) & ";" & CStr(2.2 * TW) & ";" & CStr(2.2 * TW) & ";" & CStr(2.2 * TW) & ";" & CStr(2.2 * TW)
+    ctl.ColumnWidths = CStr(1.4 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(1.6 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(1.7 * TW) & ";" & CStr(2 * TW)
 
     ' Menu buttons (two rows)
     Dim btns As Variant
@@ -355,6 +378,7 @@ Private Sub BuildMainMenu()
         Array("btnOut", "OUT of warehouse", "=Nav_OpenOutOfWarehouse()"), _
         Array("btnEvents", "Event rules", "=Nav_OpenEventTypes()"), _
         Array("btnUnmatched", "Unmatched", "=Nav_OpenUnmatched()"), _
+        Array("btnGradeStock", "Grade stock", "=Nav_OpenGradeStock()"), _
         Array("btnGrades", "Consignee x grade", "=Nav_OpenConsigneeGrades()"), _
         Array("btnHistory", "Import history", "=Nav_OpenImportHistory()"), _
         Array("btnExpIn", "Export IN list", "=Exp_InWarehouse()"), _
@@ -363,7 +387,7 @@ Private Sub BuildMainMenu()
         Array("btnExit", "Exit", "=Nav_Exit()"))
     For i = 0 To UBound(btns)
         AddButton frm, acDetail, btns(i)(0), btns(i)(1), btns(i)(2), _
-            (0.5 + (i Mod 6) * 4.2) * TW, IIf(i < 6, 12.5, 13.6) * TW, 4 * TW
+            (0.5 + (i Mod 6) * 4.2) * TW, (12.5 + (i \ 6) * 1.1) * TW, 4 * TW
     Next i
 
     DialogStyle frm
@@ -452,6 +476,56 @@ Private Sub BuildShipmentsForm()
     frm.AllowAdditions = False
     frm.AllowDeletions = False
     SaveFormAs frm, FRM_SHIPMENTS
+End Sub
+
+' ---- frmGradeStock (one row per grade + totals footer) ------------------
+Private Sub BuildGradeStockForm()
+    Dim frm As Form, flds As Variant, caps As Variant, wid As Variant
+    Dim i As Long, x As Double, fc As Object
+
+    flds = Array("Grade", "TotalQty", "Loss", "ActualQty", "TotalIn", "TotalOut", "RemainingInStock")
+    caps = Array("Grade", "Total Qty", "Loss", "Actual Qty", "Total IN", "Total OUT", "Remaining in stock")
+    wid = Array(2, 2.6, 2.4, 2.8, 2.6, 2.6, 3.6)
+
+    Set frm = BuildContinuous("qryRpt_GradeStock", "Grade stock", flds, caps, wid, 1.9)
+    AddLabel frm, acHeader, "lblHelp", "Actual = Total - Loss.   Remaining in stock = Actual - OUT.", 0.2 * TW, 1.05 * TW, 14 * TW
+    AddButton frm, acHeader, "btnClose", "Close", "=Nav_CloseActive()", 0.2 * TW, 0.15 * TW, 2.5 * TW
+    AddButton frm, acHeader, "btnRefresh", "Refresh", "=Grade_Refresh()", 2.9 * TW, 0.15 * TW, 2.5 * TW
+    AddButton frm, acHeader, "btnExport", "Export to Excel", "=Exp_GradeStock()", 5.6 * TW, 0.15 * TW, 4 * TW
+
+    ' Footer: replace the record count with column totals.
+    DeleteControl frm.Name, "lblCount"
+    DeleteControl frm.Name, "txtCount"
+    frm.Section(acFooter).Height = 1.5 * TW
+    x = 0.2 * TW
+    For i = 0 To UBound(flds)
+        If i = 0 Then
+            AddLabel frm, acFooter, "lblTotal", "TOTAL", x, 0.1 * TW, wid(i) * TW, True
+        Else
+            With AddTextBox(frm, acFooter, "sum" & flds(i), "=Sum([" & flds(i) & "])", x, 0.1 * TW, wid(i) * TW, , True)
+                .FontBold = True
+                .TextAlign = 3
+            End With
+        End If
+        frm.Controls("txt" & flds(i)).TextAlign = IIf(i = 0, 1, 3)
+        x = x + wid(i) * TW + 0.05 * TW
+    Next i
+    AddLabel frm, acFooter, "lblNoGrade", "Waybills without a valid grade (not counted):", 0.2 * TW, 0.8 * TW, 7 * TW
+    AddTextBox frm, acFooter, "txtNoGrade", "=DCount(""*"",""tblOrderDetails"",""GradeCode Is Null"")", 7.3 * TW, 0.8 * TW, 2 * TW, , True
+
+    ' Remaining in stock: bold, red when below zero.
+    With frm.Controls("txtRemainingInStock")
+        .FontBold = True
+        Set fc = .FormatConditions.Add(acFieldValue, acLessThan, "0")
+        fc.ForeColor = CLR_OUT
+    End With
+    frm.Controls("txtTotalIn").ForeColor = CLR_IN
+    frm.Controls("txtTotalOut").ForeColor = CLR_OUT
+
+    frm.AllowEdits = False
+    frm.AllowAdditions = False
+    frm.AllowDeletions = False
+    SaveFormAs frm, FRM_GRADE_STOCK
 End Sub
 
 ' ---- frmShipmentHistory -----------------------------------------------

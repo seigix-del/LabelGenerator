@@ -84,7 +84,7 @@ End Function
 
 ' Grade and loss code inside the contents text, e.g. "... \\ G1", "... / G1"
 ' or "... // G1-L4" (the separator does not matter). G<n> is the grade
-' (G1..G13) and counts 1 item; G<n>-L<k> is ONLY a loss of k items for that
+' (G1..G9, G11..G13 - see GRADE_LIST) and counts 1 item; G<n>-L<k> is ONLY a loss of k items for that
 ' grade. The last match in the text wins.
 ' Returns False when the text holds no grade code.
 Public Function ParseGradeLoss(ByVal text As String, ByRef grade As String, ByRef loss As Long) As Boolean
@@ -102,6 +102,10 @@ Public Function ParseGradeLoss(ByVal text As String, ByRef grade As String, ByRe
     If ms.Count = 0 Then Exit Function
     Set m = ms(ms.Count - 1)
     grade = UCase$(m.SubMatches(0))
+    If Not IsValidGrade(grade) Then          ' e.g. G10 - not a grade we stock
+        grade = ""
+        Exit Function
+    End If
     If Len(m.SubMatches(1) & "") > 0 Then loss = CLng(m.SubMatches(1))
     ParseGradeLoss = True
 End Function

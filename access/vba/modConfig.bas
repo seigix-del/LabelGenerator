@@ -79,6 +79,16 @@ Public Function HeaderAliases(ByVal logicalCol As String) As Variant
 End Function
 
 ' ---------------------------------------------------------------------------
+' Valid grades (G10 is not used). A code outside this list is treated as
+' "no grade" so it shows up in the "(no grade)" line instead of being counted.
+' ---------------------------------------------------------------------------
+Public Const GRADE_LIST As String = "G1,G2,G3,G4,G5,G6,G7,G8,G9,G11,G12,G13"
+
+Public Function IsValidGrade(ByVal grade As String) As Boolean
+    IsValidGrade = InStr("," & GRADE_LIST & ",", "," & UCase$(grade) & ",") > 0
+End Function
+
+' ---------------------------------------------------------------------------
 ' Seed events. Element layout: Array(EventName, IsInWarehouse, SortOrder)
 '   "jahiza lil-iltiqat"   (ready for pickup)       -> IN warehouse
 '   "istilam min al-amil"  (received from customer) -> IN warehouse

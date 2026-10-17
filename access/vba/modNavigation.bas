@@ -18,6 +18,7 @@ Public Const FRM_EVENTS As String = "frmEventTypes"
 Public Const FRM_UNMATCHED As String = "frmUnmatched"
 Public Const FRM_BATCHES As String = "frmImportHistory"
 Public Const FRM_GRADES As String = "frmConsigneeGrades"
+Public Const FRM_GRADE_STOCK As String = "frmGradeStock"
 
 Public Const LOC_ALL As String = "All"
 Public Const LOC_IN As String = "In warehouse"
@@ -136,6 +137,16 @@ Public Function Nav_OpenUnmatched() As Boolean
     OpenFormSafe FRM_UNMATCHED
 End Function
 
+Public Function Nav_OpenGradeStock() As Boolean
+    OpenFormSafe FRM_GRADE_STOCK
+End Function
+
+Public Function Grade_Refresh() As Boolean
+    On Error Resume Next
+    If IsFormLoaded(FRM_GRADE_STOCK) Then Forms(FRM_GRADE_STOCK).Requery
+    Dash_Refresh
+End Function
+
 Public Function Nav_OpenConsigneeGrades() As Boolean
     OpenFormSafe FRM_GRADES
 End Function
@@ -213,6 +224,9 @@ Public Function Imp_Run() As Boolean
         f!txtResult = summary
         Dash_Refresh
         If IsFormLoaded(FRM_SHIPMENTS) Then Forms(FRM_SHIPMENTS).Requery
+        If IsFormLoaded(FRM_GRADES) Then Forms(FRM_GRADES).Requery
+        ' Show the updated grade stock straight after every upload.
+        OpenFormSafe FRM_GRADE_STOCK
     Else
         f!txtResult = summary
     End If
@@ -308,6 +322,10 @@ ExitHere:
 EH:
     LogError "modNavigation.Exp_ConsigneeGrades", Err.Number, Err.Description
     Resume ExitHere
+End Function
+
+Public Function Exp_GradeStock() As Boolean
+    ExportQuery "qryRpt_GradeStock", "GradeStock_" & Format$(Date, "yyyymmdd")
 End Function
 
 ' Grade / loss totals of the last uploaded master file.

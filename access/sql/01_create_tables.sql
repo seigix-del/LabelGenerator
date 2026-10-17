@@ -21,6 +21,8 @@ CREATE UNIQUE INDEX UX_EventTypes_Key ON tblEventTypes (EventKey);
 
 CREATE TABLE tblImportBatches (BatchID COUNTER CONSTRAINT PK_ImportBatches PRIMARY KEY, ImportType TEXT(20) NOT NULL, FileName TEXT(255), ImportedOn DATETIME DEFAULT Now(), ImportedBy TEXT(100), RowsRead LONG DEFAULT 0, RowsInserted LONG DEFAULT 0, RowsUpdated LONG DEFAULT 0, RowsUnmatched LONG DEFAULT 0, RowsSkipped LONG DEFAULT 0, FileInCount LONG DEFAULT 0, FileOutCount LONG DEFAULT 0);
 
+CREATE TABLE tblGrades (GradeCode TEXT(10) CONSTRAINT PK_Grades PRIMARY KEY, SortOrder LONG NOT NULL);
+
 CREATE TABLE tblOrders (OrderID COUNTER CONSTRAINT PK_Orders PRIMARY KEY, ReferenceNo TEXT(50) NOT NULL, SecondaryRef TEXT(100), CustomerID LONG, CityID LONG, CreatedBatchID LONG, CreatedOn DATETIME DEFAULT Now(),
     CONSTRAINT FK_Orders_Customers FOREIGN KEY (CustomerID) REFERENCES tblCustomers (CustomerID),
     CONSTRAINT FK_Orders_Cities FOREIGN KEY (CityID) REFERENCES tblCities (CityID),
