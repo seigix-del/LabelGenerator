@@ -88,7 +88,7 @@ Continuous form on `qryShipmentsList`. Read-only, with no additions or deletions
 Header:
 | Search: [__________] Show: [All v] [Search][Clear][Export IN][Export OUT][Close]
 | Double-click a row to see its status history. Green = IN, red = OUT.
-| Waybill | Reference | Secondary ref | Contents | Last event | Loc. | City | Consignee | Updated
+| Waybill | Reference | Secondary ref | Contents | Last event | Loc. | City | اسم المرسل إليه | Updated
 Detail (one row per waybill):
 | EBUXSL… | 71204-1   | ASR-SEP30-G9  | نقطة…    | جاهزة…     | IN   | …    | …         | …
 Footer:
@@ -118,7 +118,7 @@ The *IN warehouse?* box cannot be edited. It is ticked only for `جاهزة لل
 
 ## frmUnmatched
 
-Continuous and read-only, on `qryRpt_UnmatchedAll`. The columns are Batch, Imported, Waybill, Last event, City and Consignee. The **Export last batch** button calls `=Exp_Unmatched()`.
+Continuous and read-only, on `qryRpt_UnmatchedAll`. The columns are Batch, Imported, Waybill, Last event, City and `اسم المرسل إليه` (consignee). The **Export last batch** button calls `=Exp_Unmatched()`.
 
 ## frmImportHistory
 

@@ -69,7 +69,7 @@ Public Function HeaderAliases(ByVal logicalCol As String) As Variant
                 UnEsc("\u0622\u062E\u0631 \u062D\u062F\u062B"), _
                 "Last Event", "Status")
         Case COL_CONSIGNEE
-            ' "ism al-mursal ilayh"
+            ' "ism al-mursal ilayh" = consignee (shown as this caption on forms too)
             HeaderAliases = Array( _
                 UnEsc("\u0627\u0633\u0645 \u0627\u0644\u0645\u0631\u0633\u0644 \u0625\u0644\u064A\u0647"), _
                 "Consignee", "Consignee Name", "Receiver")

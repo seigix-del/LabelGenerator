@@ -247,7 +247,7 @@ Private Sub CreateForms()
     BuildEventTypesForm
     BuildListForm FRM_UNMATCHED, "Unmatched waybills (in status file, not in database)", "qryRpt_UnmatchedAll", _
         Array("BatchID", "ImportedOn", "Waybill", "LastEvent", "CityName", "ConsigneeName"), _
-        Array("Batch", "Imported", "Waybill", "Last event", "City", "Consignee"), _
+        Array("Batch", "Imported", "Waybill", "Last event", "City", HeaderAliases(COL_CONSIGNEE)(0)), _
         Array(1.5, 3.2, 4.5, 4, 3, 7.5), "=Exp_Unmatched()", "Export last batch"
     BuildListForm FRM_BATCHES, "Import history", "qryImportBatchesList", _
         Array("BatchID", "ImportType", "ImportedOn", "RowsRead", "RowsInserted", "RowsUpdated", "RowsUnmatched", "RowsSkipped", "FileInCount", "FileOutCount", "FileName"), _
@@ -366,7 +366,7 @@ Private Sub BuildShipmentsForm()
     Dim flds As Variant, caps As Variant, wid As Variant
 
     flds = Array("Waybill", "ReferenceNo", "SecondaryRef", "ProductDescription", "EventName", "Location", "CityName", "CustomerName", "LastUpdated")
-    caps = Array("Waybill", "Reference", "Secondary ref", "Contents", "Last event", "Loc.", "City", "Consignee", "Updated")
+    caps = Array("Waybill", "Reference", "Secondary ref", "Contents", "Last event", "Loc.", "City", HeaderAliases(COL_CONSIGNEE)(0), "Updated")
     wid = Array(4, 2.4, 3.2, 5.5, 3.6, 1.3, 2.4, 6.5, 3)
 
     Set frm = BuildContinuous("qryShipmentsList", "Shipments", flds, caps, wid, 2.6)
