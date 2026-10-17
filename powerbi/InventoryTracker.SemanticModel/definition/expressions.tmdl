@@ -1,0 +1,236 @@
+expression MasterFolder = "C:\InventoryData\Master" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: c76d5d7d-c1bd-5aa8-942e-fbffccaddff9
+
+	annotation PBI_ResultType = Text
+
+expression StatusFolder = "C:\InventoryData\Status" meta [IsParameterQuery = true, Type = "Text", IsParameterQueryRequired = true]
+	lineageTag: 378fc788-5296-5ea7-a3c1-a7421d672077
+
+	annotation PBI_ResultType = Text
+
+expression cfgInEvents =
+		{"جاهزة للالتقاط", "استلام من العميل"}
+	lineageTag: 323a88a2-1339-5759-974a-66c0a3f03834
+
+	annotation PBI_ResultType = List
+
+expression cfgGrades =
+		{"G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G11", "G12", "G13"}
+	lineageTag: 7fb6d9aa-dc90-54f6-b4f3-aa66399495ce
+
+	annotation PBI_ResultType = List
+
+expression cfgHeaderAliases =
+		let
+		    Aliases = {
+		        {"Waybill",       {"بوليصة الشحن", "رقم التتبع", "رقم البوليصة", "Waybill", "AWB", "Tracking Number", "Tracking No"}},
+		        {"ReferenceNo",   {"رقم المرجع", "Reference", "Reference No", "Ref"}},
+		        {"Contents",      {"وصف محتويات الشحنة", "Contents", "Description", "Shipment Contents"}},
+		        {"SecondaryRef",  {"رقم المرجع الثانوي", "Secondary Reference", "Secondary Ref"}},
+		        {"CityName",      {"مدينة الوجهة", "Destination City", "City"}},
+		        {"LastEvent",     {"آخر حدث", "Last Event", "Status"}},
+		        {"ConsigneeName", {"اسم المرسل إليه", "Consignee", "Consignee Name", "Receiver"}}
+		    },
+		    Rows = List.Combine(List.Transform(Aliases, (a) => List.Transform(a{1}, (h) => [Key = fnNormKey(h), Logical = a{0}])))
+		in
+		    Table.Buffer(Table.FromRecords(Rows))
+	lineageTag: 6c957731-b6a1-5e78-8a92-7537950fbd79
+
+	annotation PBI_ResultType = Table
+
+expression fnCleanText =
+		(value as any) as nullable text =>
+		let
+		    Raw = if value = null then null else Text.From(value),
+		    NoMarks = if Raw = null then null
+		        else Text.Remove(Raw, List.Transform({8206, 8207, 8234, 8235, 8236, 8237, 8238, 1600, 65279}, Character.FromNumber)),
+		    Spaced = if NoMarks = null then null
+		        else List.Accumulate({"#(cr)", "#(lf)", "#(tab)", Character.FromNumber(160)}, NoMarks, (acc, c) => Text.Replace(acc, c, " ")),
+		    Collapsed = if Spaced = null then null else Text.Combine(List.Select(Text.Split(Spaced, " "), each _ <> ""), " ")
+		in
+		    if Collapsed = null or Collapsed = "" then null else Collapsed
+	lineageTag: f7a2a827-e2f5-59e1-907c-b34758108e6f
+
+	annotation PBI_ResultType = Function
+
+expression fnNormKey =
+		(value as any) as nullable text =>
+		let
+		    Clean = fnCleanText(value),
+		    Pairs = {{"آ", "ا"}, {"أ", "ا"}, {"إ", "ا"}, {"ى", "ي"}, {"ة", "ه"}}
+		in
+		    if Clean = null then null
+		    else Text.Lower(List.Accumulate(Pairs, Clean, (acc, p) => Text.Replace(acc, p{0}, p{1})))
+	lineageTag: f1a691f6-ccf9-50c5-9191-b5cb4134ca67
+
+	annotation PBI_ResultType = Function
+
+expression fnNormWaybill =
+		(value as any) as nullable text =>
+		let
+		    Clean = fnCleanText(value)
+		in
+		    if Clean = null then null else Text.Upper(Text.Replace(Clean, " ", ""))
+	lineageTag: b1f1c717-b68b-5ab6-8bc3-5f5fe4759af4
+
+	annotation PBI_ResultType = Function
+
+expression fnHeaderLogical =
+		(header as any) as nullable text =>
+		let
+		    Key = fnNormKey(header),
+		    Hits = if Key = null then {} else Table.SelectRows(cfgHeaderAliases, each [Key] = Key)[Logical]
+		in
+		    List.First(Hits, null)
+	lineageTag: d5e27a93-283f-5603-bdbd-15c794bda882
+
+	annotation PBI_ResultType = Function
+
+expression fnParseGradeLoss =
+		(value as nullable text) as nullable record =>
+		let
+		    S = if value = null then "" else Text.Upper(value),
+		    Len = Text.Length(S),
+		    Chr = (i as number) as text => if i >= 0 and i < Len then Text.At(S, i) else "",
+		    IsDigit = (c as text) as logical => c >= "0" and c <= "9",
+		    IsAlnum = (c as text) as logical => (c >= "A" and c <= "Z") or IsDigit(c),
+		    CountWhile = (i as number, test as function) as number =>
+		        List.Count(List.FirstN(List.Numbers(i, List.Max({0, Len - i})), each test(Chr(_)))),
+		    MatchAt = (p as number) as nullable record =>
+		        let
+		            OkStart = p = 0 or not IsAlnum(Chr(p - 1)),
+		            DigitsG = CountWhile(p + 1, IsDigit),
+		            EndG = p + 1 + DigitsG,
+		            OkG = OkStart and DigitsG >= 1 and DigitsG <= 2 and not IsAlnum(Chr(EndG)),
+		            I1 = EndG + CountWhile(EndG, each _ = " "),
+		            I2 = I1 + 1 + CountWhile(I1 + 1, each _ = " "),
+		            HasL = Chr(I1) = "-" and Chr(I2) = "L",
+		            I3 = I2 + 1 + CountWhile(I2 + 1, each _ = " "),
+		            DigitsL = if HasL then CountWhile(I3, IsDigit) else 0,
+		            OkL = HasL and DigitsL >= 1 and DigitsL <= 5 and not IsAlnum(Chr(I3 + DigitsL))
+		        in
+		            if OkG then
+		                [Grade = "G" & Text.From(Number.From(Text.Middle(S, p + 1, DigitsG))),
+		                 Loss = if OkL then Number.From(Text.Middle(S, I3, DigitsL)) else 0]
+		            else null,
+		    Matches = List.RemoveNulls(List.Transform(Text.PositionOf(S, "G", Occurrence.All), MatchAt)),
+		    Last = List.Last(Matches, null)
+		in
+		    if Last <> null and List.Contains(cfgGrades, Last[Grade]) then Last else null
+	lineageTag: 21be8101-f686-5c5a-b72c-26738c2e14d7
+
+	annotation PBI_ResultType = Function
+
+expression fnCustomerCode =
+		(value as nullable text) as nullable text =>
+		let
+		    Parts = if value = null then {} else Text.Split(value, "-"),
+		    Tail = if List.Count(Parts) < 2 then "" else Text.Trim(List.Last(Parts)),
+		    First = Text.Upper(Text.Start(Tail, 1)),
+		    Last = Text.End(Tail, 1),
+		    Ok = Text.Length(Tail) >= 2 and Text.Length(Tail) <= 30 and not Text.Contains(Tail, " ")
+		        and First >= "A" and First <= "Z" and Last >= "0" and Last <= "9"
+		in
+		    if Ok then Text.Upper(Tail) else null
+	lineageTag: 1511e94a-deaf-55a4-9cac-cab16d0ead1f
+
+	annotation PBI_ResultType = Function
+
+expression fnReadWorkbook =
+		(content as binary) as table =>
+		let
+		    LogicalCols = {"Waybill", "ReferenceNo", "Contents", "SecondaryRef", "CityName", "LastEvent", "ConsigneeName"},
+		    Empty = #table(LogicalCols & {"RowIndex"}, {}),
+		    Prepare = (raw as table) as nullable table =>
+		        let
+		            Top = Table.ToRows(Table.FirstN(raw, 15)),
+		            Flags = List.Transform(Top, (row) => List.AnyTrue(List.Transform(row, (c) => fnHeaderLogical(c) = "Waybill"))),
+		            Idx = List.PositionOf(Flags, true)
+		        in
+		            if Idx < 0 then null
+		            else
+		                let
+		                    Body = Table.PromoteHeaders(Table.Skip(raw, Idx), [PromoteAllScalars = true]),
+		                    Pairs = List.Transform(Table.ColumnNames(Body), (n) => {n, fnHeaderLogical(n)}),
+		                    Mapped = List.Select(Pairs, each _{1} <> null),
+		                    FirstPerLogical = List.Accumulate(Mapped, {},
+		                        (acc, p) => if List.Contains(List.Transform(acc, each _{1}), p{1}) then acc else acc & {p}),
+		                    Kept = Table.SelectColumns(Body, List.Transform(FirstPerLogical, each _{0})),
+		                    Renamed = Table.RenameColumns(Kept, List.Select(FirstPerLogical, each _{0} <> _{1})),
+		                    Complete = List.Accumulate(LogicalCols, Renamed,
+		                        (t, c) => if Table.HasColumns(t, c) then t else Table.AddColumn(t, c, each null)),
+		                    Indexed = Table.AddIndexColumn(Table.SelectColumns(Complete, LogicalCols), "RowIndex", 1, 1)
+		                in
+		                    Indexed,
+		    Sheets = Table.SelectRows(Excel.Workbook(content, false), each [Kind] = "Sheet"),
+		    Prepared = List.RemoveNulls(List.Transform(Sheets[Data], Prepare))
+		in
+		    List.First(Prepared, Empty)
+	lineageTag: a48a7afa-33ce-5406-ad75-578a192c9576
+
+	annotation PBI_ResultType = Function
+
+expression fnExcelFiles =
+		(folder as text) as table =>
+		let
+		    Files = Folder.Files(folder),
+		    Excel = Table.SelectRows(Files, each List.Contains({".xlsx", ".xlsm", ".xls"}, Text.Lower([Extension]))
+		        and not Text.StartsWith([Name], "~$")),
+		    WithRows = Table.AddColumn(Excel, "Rows", each fnReadWorkbook([Content])),
+		    Slim = Table.SelectColumns(WithRows, {"Name", "Date modified", "Rows"}),
+		    Expanded = Table.ExpandTableColumn(Slim, "Rows",
+		        {"Waybill", "ReferenceNo", "Contents", "SecondaryRef", "CityName", "LastEvent", "ConsigneeName", "RowIndex"})
+		in
+		    Table.RenameColumns(Expanded, {{"Name", "SourceFile"}, {"Date modified", "FileDate"}})
+	lineageTag: 1e23df94-739a-53d3-ba03-827f5763fd90
+
+	annotation PBI_ResultType = Function
+
+expression MasterClean =
+		let
+		    Source = fnExcelFiles(MasterFolder),
+		    Clean = Table.TransformColumns(Source, {
+		        {"Waybill", fnNormWaybill}, {"ReferenceNo", fnCleanText},
+		        {"Contents", fnCleanText}, {"SecondaryRef", fnCleanText}}),
+		    WithWaybill = Table.SelectRows(Clean, each [Waybill] <> null),
+		    Sorted = Table.Buffer(Table.Sort(WithWaybill,
+		        {{"FileDate", Order.Descending}, {"SourceFile", Order.Descending}, {"RowIndex", Order.Descending}})),
+		    Latest = Table.Distinct(Sorted, {"Waybill"}),
+		    WithRef = Table.AddColumn(Latest, "Reference", each if [ReferenceNo] = null then [Waybill] else [ReferenceNo], type text),
+		    // Grade/loss from the contents; fall back to the secondary reference (e.g. ASR-SEP30-G9).
+		    WithGrade = Table.AddColumn(WithRef, "GL", each
+		        let a = fnParseGradeLoss([Contents]) in if a <> null then a else fnParseGradeLoss([SecondaryRef])),
+		    Expanded = Table.ExpandRecordColumn(WithGrade, "GL", {"Grade", "Loss"})
+		in
+		    Table.SelectColumns(Expanded, {"Waybill", "Reference", "SecondaryRef", "Contents", "Grade", "Loss", "SourceFile", "FileDate"})
+	lineageTag: acb1f12b-65fd-50d3-ba0a-31bf05cdd0e8
+
+	annotation PBI_ResultType = Table
+
+expression StatusAll =
+		let
+		    Source = fnExcelFiles(StatusFolder),
+		    Clean = Table.TransformColumns(Source, {
+		        {"Waybill", fnNormWaybill}, {"LastEvent", fnCleanText},
+		        {"CityName", fnCleanText}, {"ConsigneeName", fnCleanText}}),
+		    Usable = Table.SelectRows(Clean, each [Waybill] <> null and [LastEvent] <> null),
+		    InKeys = List.Buffer(List.Transform(cfgInEvents, fnNormKey)),
+		    WithKey = Table.AddColumn(Usable, "EventKey", each fnNormKey([LastEvent]), type text),
+		    WithIn = Table.AddColumn(WithKey, "IsInEvent", each List.Contains(InKeys, [EventKey]), type logical),
+		    WithCode = Table.AddColumn(WithIn, "CustomerCode", each fnCustomerCode([ConsigneeName]), type text)
+		in
+		    Table.SelectColumns(WithCode,
+		        {"Waybill", "LastEvent", "EventKey", "IsInEvent", "CityName", "ConsigneeName", "CustomerCode", "SourceFile", "FileDate", "RowIndex"})
+	lineageTag: 6470d836-2e4b-5853-9c19-b5b8d77c3b9d
+
+	annotation PBI_ResultType = Table
+
+expression StatusLatest =
+		let
+		    Sorted = Table.Buffer(Table.Sort(StatusAll,
+		        {{"FileDate", Order.Descending}, {"SourceFile", Order.Descending}, {"RowIndex", Order.Descending}}))
+		in
+		    Table.Distinct(Sorted, {"Waybill"})
+	lineageTag: c9e35357-84ba-5c5b-a744-b20a93c6bfbb
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,25 @@
+table Grades
+	lineageTag: 7277e93d-ef3f-51b5-aca8-f07a044ac34f
+
+	column Grade
+		dataType: string
+		sortByColumn: SortOrder
+		lineageTag: 647483c2-11b4-56d6-9d73-860a08ed7c3d
+		summarizeBy: none
+		sourceColumn: Grade
+
+	column SortOrder
+		dataType: int64
+		isHidden
+		lineageTag: c6e7b545-a9f6-5ba6-9d56-7fe61276c672
+		summarizeBy: none
+		sourceColumn: SortOrder
+
+	partition Grades = m
+		mode: import
+		source =
+				let
+				    Rows = List.Transform(cfgGrades, each [Grade = _, SortOrder = Number.From(Text.Middle(_, 1))])
+				in
+				    Table.FromRecords(Rows, type table [Grade = text, SortOrder = Int64.Type])
+

@@ -1,0 +1,225 @@
+table Shipments
+	lineageTag: 09dbc010-7c8f-5e96-a4d6-52f6d8cf9062
+
+	measure 'Total Waybills' = COUNTROWS(Shipments)
+		formatString: #,0
+		displayFolder: Inventory
+		lineageTag: b74c2230-5ef5-53d7-a05e-e5d0aaaa9ad6
+
+	measure 'IN Waybills' = CALCULATE(COUNTROWS(Shipments), Shipments[InWarehouse] = TRUE())
+		formatString: #,0
+		displayFolder: Inventory
+		lineageTag: 3ce7ee1d-92a1-587b-8f96-eeaf498dd36f
+
+	measure 'OUT Waybills' = CALCULATE(COUNTROWS(Shipments), Shipments[InWarehouse] = FALSE())
+		formatString: #,0
+		displayFolder: Inventory
+		lineageTag: d6f9a545-8cbc-5ca8-a9ee-e0a633b22bdd
+
+	measure '% IN' = DIVIDE([IN Waybills], [Total Waybills])
+		formatString: 0.0%
+		displayFolder: Inventory
+		lineageTag: 0d0ef53f-9266-5195-9bee-1677cb3a7215
+
+	measure 'Unmatched Waybills' = COUNTROWS(Unmatched) + 0
+		formatString: #,0
+		displayFolder: Inventory
+		lineageTag: fe9b7956-9ed4-554c-a711-798962960301
+
+	measure 'No Grade Waybills' = CALCULATE(COUNTROWS(Shipments), ISBLANK(Shipments[Grade])) + 0
+		formatString: #,0
+		displayFolder: Inventory
+		lineageTag: 4124515e-72e2-532e-9b33-2118713f2d51
+
+	measure 'Last Status File Date' = MAX(Shipments[StatusFileDate])
+		formatString: yyyy-mm-dd hh:nn
+		displayFolder: Inventory
+		lineageTag: 1ac0d58d-918d-52dc-8bc7-cfce21e05b8d
+
+	measure 'G Total' = SUM(Shipments[GQty])
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: c4426150-00e3-5d10-869a-7529ad92df93
+
+	measure 'G IN' = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = TRUE())
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: b293178b-08c6-5ee7-9d8a-f5a6ecb9ae15
+
+	measure 'G OUT' = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = FALSE())
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: ec7cf917-7602-5ad6-9c8c-cf63f8bcb1bf
+
+	measure 'G Remaining' = [G Total] - [G OUT]
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: 3d3e4796-113c-5b17-b124-ebc4db816c28
+
+	measure 'L Total' = SUM(Shipments[LossQty])
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: e1054cac-d36c-55cd-8435-f695ad54c793
+
+	measure 'L IN' = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = TRUE())
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: 6f5a4ff1-e28f-5a4f-866f-7eff4a2d99d4
+
+	measure 'L OUT' = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = FALSE())
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: 7dadde2c-1025-526b-8bc5-c248407deead
+
+	measure 'L Remaining' = [L Total] - [L OUT]
+		formatString: #,0
+		displayFolder: Grade stock
+		lineageTag: 29ec4e07-5db5-5ad1-a049-bcf26f16cc51
+
+	column Waybill
+		dataType: string
+		lineageTag: 281249ce-2097-5f7a-b843-852c183b057f
+		summarizeBy: none
+		sourceColumn: Waybill
+
+	column Reference
+		dataType: string
+		lineageTag: 985f4c73-3669-5e5a-9888-c53f5d9f47d4
+		summarizeBy: none
+		sourceColumn: Reference
+
+	column SecondaryRef
+		dataType: string
+		lineageTag: b8ce514f-b33c-5313-b00f-eb4a66eb9301
+		summarizeBy: none
+		sourceColumn: SecondaryRef
+
+	column Contents
+		dataType: string
+		lineageTag: 3cab56d6-aab4-5b01-b1e4-1a45bb09c35e
+		summarizeBy: none
+		sourceColumn: Contents
+
+	column Grade
+		dataType: string
+		lineageTag: 75118362-a0ca-5a6e-b4c1-d363dbabff81
+		summarizeBy: none
+		sourceColumn: Grade
+
+	column RowType
+		dataType: string
+		lineageTag: 0101b916-3a46-5add-8dbe-d48ba73037e4
+		summarizeBy: none
+		sourceColumn: RowType
+
+	column GQty
+		dataType: int64
+		isHidden
+		lineageTag: b40d6f51-de68-5693-9681-4d491024ee29
+		summarizeBy: sum
+		sourceColumn: GQty
+
+	column LossQty
+		dataType: int64
+		isHidden
+		lineageTag: 91b838e5-37f3-5108-ad4e-26904212907b
+		summarizeBy: sum
+		sourceColumn: LossQty
+
+	column LastEventLabel
+		dataType: string
+		lineageTag: 4411b28d-7441-589a-83fe-f1d47bec916f
+		summarizeBy: none
+		sourceColumn: LastEventLabel
+
+	column HasStatus
+		dataType: boolean
+		lineageTag: 7c856d9a-0e3e-5406-ac12-6d89db89590e
+		summarizeBy: none
+		sourceColumn: HasStatus
+
+	column InWarehouse
+		dataType: boolean
+		lineageTag: 240999c0-8c5d-5e5f-aeed-0b6a8f4db194
+		summarizeBy: none
+		sourceColumn: InWarehouse
+
+	column Location
+		dataType: string
+		lineageTag: a52ea915-896b-535f-9ac7-2c7b50d80d93
+		summarizeBy: none
+		sourceColumn: Location
+
+	column City
+		dataType: string
+		lineageTag: 75254945-285d-5a9b-b20a-f1cbc8a4b191
+		summarizeBy: none
+		sourceColumn: City
+
+	column Consignee
+		dataType: string
+		lineageTag: 522371bd-bff1-5401-af7b-0ac14e64597a
+		summarizeBy: none
+		sourceColumn: Consignee
+
+	column CustomerCode
+		dataType: string
+		lineageTag: c50c64be-3d15-5eb3-a068-1fcff8d3fe9d
+		summarizeBy: none
+		sourceColumn: CustomerCode
+
+	column MasterFile
+		dataType: string
+		lineageTag: c1776da8-9236-5242-941d-ce87dfd959d4
+		summarizeBy: none
+		sourceColumn: MasterFile
+
+	column MasterFileDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 61851238-25e3-598c-86b9-6481aa73f534
+		summarizeBy: none
+		sourceColumn: MasterFileDate
+
+	column StatusFile
+		dataType: string
+		lineageTag: 3fc6c3b9-4883-52e6-a73c-06f6ef0f290f
+		summarizeBy: none
+		sourceColumn: StatusFile
+
+	column StatusFileDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 3a41ead6-e2e9-5fed-b20f-40d516d299e7
+		summarizeBy: none
+		sourceColumn: StatusFileDate
+
+	partition Shipments = m
+		mode: import
+		source =
+				let
+				    Master = Table.RenameColumns(MasterClean, {{"SourceFile", "MasterFile"}, {"FileDate", "MasterFileDate"}}),
+				    Joined = Table.NestedJoin(Master, {"Waybill"}, StatusLatest, {"Waybill"}, "St", JoinKind.LeftOuter),
+				    Expanded = Table.ExpandTableColumn(Joined, "St",
+				        {"LastEvent", "IsInEvent", "CityName", "ConsigneeName", "CustomerCode", "SourceFile", "FileDate"},
+				        {"LastEvent", "IsInEvent", "City", "ConsigneeRaw", "CustomerCode", "StatusFile", "StatusFileDate"}),
+				    AddHas = Table.AddColumn(Expanded, "HasStatus", each [LastEvent] <> null, type logical),
+				    AddIn = Table.AddColumn(AddHas, "InWarehouse", each if [LastEvent] = null then true else [IsInEvent], type logical),
+				    AddLoc = Table.AddColumn(AddIn, "Location", each if [InWarehouse] then "IN" else "OUT", type text),
+				    AddEvent = Table.AddColumn(AddLoc, "LastEventLabel", each if [LastEvent] = null then "(no status yet)" else [LastEvent], type text),
+				    AddConsignee = Table.AddColumn(AddEvent, "Consignee", each if [ConsigneeRaw] = null then "(no consignee yet)" else [ConsigneeRaw], type text),
+				    // G row = 1 item of its grade; G<n>-L<k> row = k lost items (L side).
+				    AddLossQty = Table.AddColumn(AddConsignee, "LossQty", each if [Loss] = null then 0 else [Loss], Int64.Type),
+				    AddRowType = Table.AddColumn(AddLossQty, "RowType", each if [LossQty] > 0 then "L" else "G", type text),
+				    AddGQty = Table.AddColumn(AddRowType, "GQty", each if [LossQty] > 0 then 0 else 1, Int64.Type),
+				    Selected = Table.SelectColumns(AddGQty, {
+				        "Waybill", "Reference", "SecondaryRef", "Contents", "Grade", "RowType", "GQty", "LossQty",
+				        "LastEventLabel", "HasStatus", "InWarehouse", "Location", "City", "Consignee", "CustomerCode",
+				        "MasterFile", "MasterFileDate", "StatusFile", "StatusFileDate"})
+				in
+				    Table.TransformColumnTypes(Selected, {
+				        {"Waybill", type text}, {"Reference", type text}, {"SecondaryRef", type text}, {"Contents", type text},
+				        {"Grade", type text}, {"City", type text}, {"CustomerCode", type text},
+				        {"MasterFile", type text}, {"MasterFileDate", type datetime},
+				        {"StatusFile", type text}, {"StatusFileDate", type datetime}})
+

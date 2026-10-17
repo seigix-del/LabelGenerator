@@ -1,0 +1,45 @@
+table StatusHistory
+	lineageTag: 94e6cc76-ee28-59c2-a5e7-78522ac30912
+
+	column Waybill
+		dataType: string
+		lineageTag: 44ab8b75-1da5-5d61-90d1-01f22ba026d7
+		summarizeBy: none
+		sourceColumn: Waybill
+
+	column LastEvent
+		dataType: string
+		lineageTag: 0ac1f931-3116-5704-86ea-0097061f54d2
+		summarizeBy: none
+		sourceColumn: LastEvent
+
+	column SourceFile
+		dataType: string
+		lineageTag: 00497aee-9a89-5ab1-b207-83ec7f04534a
+		summarizeBy: none
+		sourceColumn: SourceFile
+
+	column FileDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: b2148c9c-3072-568f-b4e4-9390c9ed6e26
+		summarizeBy: none
+		sourceColumn: FileDate
+
+	column Location
+		dataType: string
+		lineageTag: 84dab07c-68a6-58e8-86ac-631f2df8c6f6
+		summarizeBy: none
+		sourceColumn: Location
+
+	partition StatusHistory = m
+		mode: import
+		source =
+				let
+				    Selected = Table.SelectColumns(StatusAll, {"Waybill", "LastEvent", "IsInEvent", "SourceFile", "FileDate"}),
+				    WithLoc = Table.AddColumn(Selected, "Location", each if [IsInEvent] then "IN" else "OUT", type text),
+				    Distinct = Table.Distinct(WithLoc, {"Waybill", "SourceFile"})
+				in
+				    Table.TransformColumnTypes(Table.RemoveColumns(Distinct, {"IsInEvent"}), {
+				        {"Waybill", type text}, {"LastEvent", type text}, {"SourceFile", type text}, {"FileDate", type datetime}})
+

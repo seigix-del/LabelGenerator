@@ -1,0 +1,51 @@
+table Unmatched
+	lineageTag: 7625e7db-8f43-5b2a-a0ff-0799545981f0
+
+	column Waybill
+		dataType: string
+		lineageTag: 94e7da05-699c-5156-b874-7730a5d235ac
+		summarizeBy: none
+		sourceColumn: Waybill
+
+	column LastEvent
+		dataType: string
+		lineageTag: fded2bb8-0447-5c47-aa70-fc55de65b334
+		summarizeBy: none
+		sourceColumn: LastEvent
+
+	column CityName
+		dataType: string
+		lineageTag: f90b6619-78e9-5988-8b61-af0aaea501ce
+		summarizeBy: none
+		sourceColumn: CityName
+
+	column ConsigneeName
+		dataType: string
+		lineageTag: 12f1d865-2a03-5532-b2f9-84903cc87d0a
+		summarizeBy: none
+		sourceColumn: ConsigneeName
+
+	column SourceFile
+		dataType: string
+		lineageTag: 036964b9-790c-5685-99b1-e39f3cd50da2
+		summarizeBy: none
+		sourceColumn: SourceFile
+
+	column FileDate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 6ed3393c-6c18-5b88-a44d-7719232688cb
+		summarizeBy: none
+		sourceColumn: FileDate
+
+	partition Unmatched = m
+		mode: import
+		source =
+				let
+				    Joined = Table.NestedJoin(StatusLatest, {"Waybill"}, MasterClean, {"Waybill"}, "M", JoinKind.LeftAnti),
+				    Selected = Table.SelectColumns(Joined, {"Waybill", "LastEvent", "CityName", "ConsigneeName", "SourceFile", "FileDate"})
+				in
+				    Table.TransformColumnTypes(Selected, {
+				        {"Waybill", type text}, {"LastEvent", type text}, {"CityName", type text},
+				        {"ConsigneeName", type text}, {"SourceFile", type text}, {"FileDate", type datetime}})
+

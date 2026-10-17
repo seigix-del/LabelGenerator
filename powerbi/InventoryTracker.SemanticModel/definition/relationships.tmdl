@@ -1,0 +1,3 @@
+relationship 42debf2b-df47-519c-965e-fc6d6e1cfdb4
+	fromColumn: Shipments.Grade
+	toColumn: Grades.Grade

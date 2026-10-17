@@ -1,0 +1,15 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation PBI_QueryOrder = ["MasterFolder", "StatusFolder", "cfgInEvents", "cfgGrades", "cfgHeaderAliases", "fnCleanText", "fnNormKey", "fnNormWaybill", "fnHeaderLogical", "fnParseGradeLoss", "fnCustomerCode", "fnReadWorkbook", "fnExcelFiles", "MasterClean", "StatusAll", "StatusLatest", "Shipments", "Unmatched", "StatusHistory", "Grades"]
+
+ref table Shipments
+ref table Unmatched
+ref table StatusHistory
+ref table Grades
