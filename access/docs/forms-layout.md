@@ -130,7 +130,7 @@ Continuous and read-only, on `qryRpt_GradeStock`. There is one row per grade in 
 Header:  [Close] [Refresh] [Export to Excel]
          Actual = Total - Loss.   Remaining in stock = Actual - OUT.
          Grade | Total Qty | Loss | Actual Qty | Total IN | Total OUT | Remaining in stock
-Detail:  G1    |      3000 |  300 |       2700 |     2200 |       500 |               2200
+Detail:  G2    |      3000 |  300 |       2700 |     2500 |       500 |               2200
          ...
 Footer:  TOTAL |  =Sum()   | =Sum |     =Sum   |   =Sum   |    =Sum   |              =Sum
          Waybills without a valid grade (not counted): [n]
