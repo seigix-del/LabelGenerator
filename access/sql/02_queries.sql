@@ -14,7 +14,10 @@ INSERT INTO tblOrders (ReferenceNo, SecondaryRef, CreatedBatchID) SELECT s.Refer
 UPDATE tblOrders AS o INNER JOIN tblStage_Master AS s ON o.ReferenceNo = s.ReferenceNo SET o.SecondaryRef = s.SecondaryRef WHERE s.SecondaryRef Is Not Null;
 
 -- qryImp_AppendDetails
-INSERT INTO tblOrderDetails (Waybill, OrderID, ProductID, Quantity, InWarehouse, LastBatchID) SELECT s.Waybill, o.OrderID, p.ProductID, 1, True, s.BatchID FROM ((tblStage_Master AS s INNER JOIN tblOrders AS o ON s.ReferenceNo = o.ReferenceNo) LEFT JOIN tblProducts AS p ON s.Contents = p.ProductDescription) LEFT JOIN tblOrderDetails AS d ON s.Waybill = d.Waybill WHERE d.DetailID Is Null;
+INSERT INTO tblOrderDetails (Waybill, OrderID, ProductID, Quantity, GradeCode, LossQty, InWarehouse, LastBatchID) SELECT s.Waybill, o.OrderID, p.ProductID, 1, s.GradeCode, IIf(s.LossQty Is Null, 0, s.LossQty), True, s.BatchID FROM ((tblStage_Master AS s INNER JOIN tblOrders AS o ON s.ReferenceNo = o.ReferenceNo) LEFT JOIN tblProducts AS p ON s.Contents = p.ProductDescription) LEFT JOIN tblOrderDetails AS d ON s.Waybill = d.Waybill WHERE d.DetailID Is Null;
+
+-- qryImp_UpdateDetailsGrade
+UPDATE tblOrderDetails AS d INNER JOIN tblStage_Master AS s ON d.Waybill = s.Waybill SET d.GradeCode = s.GradeCode, d.LossQty = IIf(s.LossQty Is Null, 0, s.LossQty);
 
 -- qryImp_ClearStageStatus
 DELETE FROM tblStage_Status;
@@ -50,7 +53,7 @@ UPDATE tblOrderDetails AS d INNER JOIN tblEventTypes AS e ON d.CurrentEventID = 
 DELETE FROM tblUnmatched WHERE RecordedOn < DateAdd('d', -90, Date());
 
 -- qryShipmentsList
-SELECT d.DetailID, d.Waybill, o.ReferenceNo, o.SecondaryRef, p.ProductDescription, p.ProductCode, d.Quantity, e.EventName, d.InWarehouse, IIf(d.InWarehouse, 'IN', 'OUT') AS Location, ci.CityName, cu.CustomerName, cu.CustomerCode, d.LastUpdated FROM ((((tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblProducts AS p ON d.ProductID = p.ProductID) LEFT JOIN tblEventTypes AS e ON d.CurrentEventID = e.EventID) LEFT JOIN tblCities AS ci ON o.CityID = ci.CityID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID ORDER BY d.Waybill;
+SELECT d.DetailID, d.Waybill, o.ReferenceNo, o.SecondaryRef, p.ProductDescription, p.ProductCode, d.GradeCode, d.LossQty, d.Quantity, e.EventName, d.InWarehouse, IIf(d.InWarehouse, 'IN', 'OUT') AS Location, ci.CityName, cu.CustomerName, cu.CustomerCode, d.LastUpdated FROM ((((tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblProducts AS p ON d.ProductID = p.ProductID) LEFT JOIN tblEventTypes AS e ON d.CurrentEventID = e.EventID) LEFT JOIN tblCities AS ci ON o.CityID = ci.CityID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID ORDER BY d.Waybill;
 
 -- qryShipmentHistory
 SELECT h.HistoryID, h.DetailID, d.Waybill, pe.EventName AS FromEvent, ne.EventName AS ToEvent, IIf(h.WasInWarehouse, 'IN', 'OUT') AS FromLocation, IIf(h.IsInWarehouse, 'IN', 'OUT') AS ToLocation, h.RecordedOn, b.FileName FROM (((tblStatusHistory AS h INNER JOIN tblOrderDetails AS d ON h.DetailID = d.DetailID) INNER JOIN tblEventTypes AS ne ON h.EventID = ne.EventID) LEFT JOIN tblEventTypes AS pe ON h.PrevEventID = pe.EventID) LEFT JOIN tblImportBatches AS b ON h.BatchID = b.BatchID ORDER BY h.RecordedOn DESC, h.HistoryID DESC;
@@ -72,6 +75,18 @@ SELECT IIf(p.ProductDescription Is Null, '(unknown)', p.ProductDescription) AS P
 
 -- qryRpt_ByCity
 SELECT IIf(c.CityName Is Null, '(unknown)', c.CityName) AS City, Sum(IIf(d.InWarehouse, d.Quantity, 0)) AS InQty, Sum(IIf(d.InWarehouse, 0, d.Quantity)) AS OutQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCities AS c ON o.CityID = c.CityID GROUP BY IIf(c.CityName Is Null, '(unknown)', c.CityName) ORDER BY Sum(IIf(d.InWarehouse, d.Quantity, 0)) DESC;
+
+-- qryRpt_ByGrade
+SELECT IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty FROM tblOrderDetails AS d GROUP BY IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)));
+
+-- qryRpt_ByConsigneeGrade
+SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)));
+
+-- qryRpt_ConsigneeGradeQty
+TRANSFORM Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS TotalQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13');
+
+-- qryRpt_ConsigneeGradeLoss
+TRANSFORM Sum(d.LossQty) AS Loss SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, Sum(d.LossQty) AS TotalLoss FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13');
 
 -- qryRpt_InWarehouse
 SELECT Waybill, ReferenceNo, SecondaryRef, ProductDescription, EventName, CityName, CustomerName, LastUpdated FROM qryShipmentsList WHERE InWarehouse = True;

@@ -81,6 +81,29 @@ Public Function ParseProductCode(ByVal contents As String) As String
     ParseProductCode = Left$(Trim$(Mid$(contents, p + 1)), 50)
 End Function
 
+' Grade and loss code inside the contents text, e.g. "... \\ G1" or
+' "... \\ G1-L4". G<n> is the grade (G1..G13); -L<n> marks a LOSS row of n
+' items for that grade. The last match in the text wins.
+' Returns False when the text holds no grade code.
+Public Function ParseGradeLoss(ByVal text As String, ByRef grade As String, ByRef loss As Long) As Boolean
+    Static re As Object
+    Dim ms As Object, m As Object
+    grade = "": loss = 0
+    If Len(text) = 0 Then Exit Function
+    If re Is Nothing Then
+        Set re = CreateObject("VBScript.RegExp")
+        re.Global = True
+        re.IgnoreCase = True
+        re.Pattern = "\b(G\d{1,2})(?:\s*-\s*L\s*(\d{1,5}))?\b"
+    End If
+    Set ms = re.Execute(text)
+    If ms.Count = 0 Then Exit Function
+    Set m = ms(ms.Count - 1)
+    grade = UCase$(m.SubMatches(0))
+    If Len(m.SubMatches(1) & "") > 0 Then loss = CLng(m.SubMatches(1))
+    ParseGradeLoss = True
+End Function
+
 ' ---------------------------------------------------------------------------
 ' Files
 ' ---------------------------------------------------------------------------

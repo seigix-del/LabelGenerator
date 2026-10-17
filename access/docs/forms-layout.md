@@ -24,14 +24,14 @@ Single form, unbound, 26 × 15 cm. Recalculates on `OnActivate` (`=Dash_Refresh(
 | +-------------+  +----------------+  +---------------+  +-----------------+    |
 | Last import: [Status - 2026-10-16 09:12]  Last status file - changed:[5] not found:[1]
 |                                                                                |
-| Quantity by last event              IN / OUT by product                        |
+| Quantity by last event              Quantity and loss by grade                 |
 | +---------------------------+       +----------------------------------+       |
-| | EventLabel | Loc | Qty    |       | Product        | In | Out | Tot  |       |
-| | ...        | IN  | 2      |       | ...            |    |     |      |       |
+| | EventLabel | Loc | Qty    |       | Grade | Qty | Loss | IN  | OUT   |       |
+| | ...        | IN  | 2      |       | G1    | 5   | 4    | 2   | 3     |       |
 | +---------------------------+       +----------------------------------+       |
 |                                                                                |
 | [Upload Excel][All shipments][IN warehouse][OUT of warehouse][Event rules][Unmatched]
-| [Import history][Export IN list][Export OUT list][Refresh][Exit]               |
+| [Consignee x grade][Import history][Export IN list][Export OUT list][Refresh][Exit] |
 +--------------------------------------------------------------------------------+
 ```
 
@@ -44,8 +44,8 @@ Single form, unbound, 26 × 15 cm. Recalculates on `OnActivate` (`=Dash_Refresh(
 | `txtLastImport` | TextBox | `=Kpi_LastImport()` |
 | `txtLastChanged` / `txtLastUnmatched` | TextBox | `=Kpi_LastStatusChanged()` / `=Kpi_LastStatusUnmatched()` |
 | `lstByEvent` | ListBox, 3 columns, with headings | `qryRpt_ByEvent` |
-| `lstByProduct` | ListBox, 4 columns, with headings | `qryRpt_ByProduct` |
-| `btnImport` … `btnExit` | CommandButton | `Nav_OpenImport`, `Nav_OpenShipments`, `Nav_OpenInWarehouse`, `Nav_OpenOutOfWarehouse`, `Nav_OpenEventTypes`, `Nav_OpenUnmatched`, `Nav_OpenImportHistory`, `Exp_InWarehouse`, `Exp_OutOfWarehouse`, `Dash_Refresh`, `Nav_Exit` |
+| `lstByGrade` | ListBox, 5 columns (Grade, Qty, Loss, Qty IN, Qty OUT), with headings | `qryRpt_ByGrade` |
+| `btnImport` … `btnExit` | CommandButton | `Nav_OpenImport`, `Nav_OpenShipments`, `Nav_OpenInWarehouse`, `Nav_OpenOutOfWarehouse`, `Nav_OpenEventTypes`, `Nav_OpenUnmatched`, `Nav_OpenConsigneeGrades`, `Nav_OpenImportHistory`, `Exp_InWarehouse`, `Exp_OutOfWarehouse`, `Dash_Refresh`, `Nav_Exit` |
 
 ## frmImport: upload Excel
 
@@ -119,6 +119,13 @@ The *IN warehouse?* box cannot be edited. It is ticked only for `جاهزة لل
 ## frmUnmatched
 
 Continuous and read-only, on `qryRpt_UnmatchedAll`. The columns are Batch, Imported, Waybill, Last event, City and `اسم المرسل إليه` (consignee). The **Export last batch** button calls `=Exp_Unmatched()`.
+
+## frmConsigneeGrades: quantity and loss by consignee and grade
+
+Continuous and read-only, on `qryRpt_ByConsigneeGrade`. The columns are `اسم المرسل إليه`, Code, Grade, Qty, Loss, Qty IN and Qty OUT.
+
+- A plain `G<n>` row counts 1 towards Qty. A `G<n>-L<k>` row adds k to Loss and nothing to Qty.
+- **Export to Excel** (`=Exp_ConsigneeGrades()`) saves one workbook with three sheets: this list, `qryRpt_ConsigneeGradeQty` (consignees × G1 to G13) and `qryRpt_ConsigneeGradeLoss`.
 
 ## frmImportHistory
 

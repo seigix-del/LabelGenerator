@@ -17,6 +17,7 @@ Public Const FRM_HISTORY As String = "frmShipmentHistory"
 Public Const FRM_EVENTS As String = "frmEventTypes"
 Public Const FRM_UNMATCHED As String = "frmUnmatched"
 Public Const FRM_BATCHES As String = "frmImportHistory"
+Public Const FRM_GRADES As String = "frmConsigneeGrades"
 
 Public Const LOC_ALL As String = "All"
 Public Const LOC_IN As String = "In warehouse"
@@ -102,7 +103,7 @@ Public Function Dash_Refresh() As Boolean
     If IsFormLoaded(FRM_MAIN) Then
         Forms(FRM_MAIN).Recalc
         Forms(FRM_MAIN).Controls("lstByEvent").Requery
-        Forms(FRM_MAIN).Controls("lstByProduct").Requery
+        Forms(FRM_MAIN).Controls("lstByGrade").Requery
     End If
     Dash_Refresh = True
 End Function
@@ -133,6 +134,10 @@ End Function
 
 Public Function Nav_OpenUnmatched() As Boolean
     OpenFormSafe FRM_UNMATCHED
+End Function
+
+Public Function Nav_OpenConsigneeGrades() As Boolean
+    OpenFormSafe FRM_GRADES
 End Function
 
 Public Function Nav_OpenImportHistory() As Boolean
@@ -241,7 +246,7 @@ Public Function Shp_ApplyFilter() As Boolean
     If Len(s) > 0 Then
         s = "'*" & Replace(s, "'", "''") & "*'"
         crit = "(Waybill Like " & s & " OR ReferenceNo Like " & s & _
-               " OR SecondaryRef Like " & s & " OR ProductDescription Like " & s & _
+               " OR SecondaryRef Like " & s & " OR ProductDescription Like " & s & " OR GradeCode Like " & s & _
                " OR CustomerName Like " & s & " OR CityName Like " & s & _
                " OR EventName Like " & s & ")"
     End If
@@ -285,6 +290,24 @@ End Function
 
 Public Function Exp_OutOfWarehouse() As Boolean
     ExportQuery "qryRpt_OutOfWarehouse", "OutOfWarehouse_" & Format$(Date, "yyyymmdd")
+End Function
+
+' One workbook, three sheets: detail list, quantity pivot, loss pivot.
+Public Function Exp_ConsigneeGrades() As Boolean
+    On Error GoTo EH
+    Dim p As String, q As Variant
+    p = PickSavePath("ConsigneeGrades_" & Format$(Date, "yyyymmdd") & ".xlsx")
+    If Len(p) = 0 Then Exit Function
+    If FileExists(p) Then Kill p
+    For Each q In Array("qryRpt_ByConsigneeGrade", "qryRpt_ConsigneeGradeQty", "qryRpt_ConsigneeGradeLoss")
+        DoCmd.TransferSpreadsheet acExport, acSpreadsheetTypeExcel12Xml, q, p, True
+    Next q
+    ShowInfo "Exported to:" & vbCrLf & p
+ExitHere:
+    Exit Function
+EH:
+    LogError "modNavigation.Exp_ConsigneeGrades", Err.Number, Err.Description
+    Resume ExitHere
 End Function
 
 Public Function Exp_Unmatched() As Boolean

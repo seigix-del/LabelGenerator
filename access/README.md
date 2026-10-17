@@ -41,6 +41,26 @@ Running `BuildInventoryDatabase` again rebuilds the queries and forms without to
 
 Excel must be installed, because the importer reads workbooks through Excel automation. This handles any header row in the first 15 rows, any sheet order, `.xlsx`, `.xlsm` and `.xls`, and stops numbers like `71204-1` from being treated as dates.
 
+## Grades, quantity and loss
+
+The contents column (`وصف محتويات الشحنة`) ends in a grade code, such as `نقطة توزيع المجاردة \\ G1`. The grades are **G1 to G13**.
+
+| Code in the row | Meaning |
+|---|---|
+| `G1` | **1 item** of grade G1. Each such row (waybill) adds 1 to G1's quantity. |
+| `G1-L4` | A **loss row** for grade G1: **4 items lost**. It adds 4 to G1's loss and **nothing** to the quantity. |
+
+Totals are kept per consignee (`اسم المرسل إليه`, from the status file). For example, 5 rows of `G1` and 1 row of `G1-L4` for the same consignee give **G1 quantity 5, loss 4**.
+
+If the contents have no code, the grade is taken from `رقم المرجع الثانوي` instead (for example `ASR-SEP30-G9` gives G9). A waybill that hasn't appeared in a status file yet is listed as *(no consignee yet)*.
+
+Where to see the totals:
+- The dashboard list **Quantity and loss by grade**.
+- The **Consignee x grade** form, which shows each consignee and grade with Qty, Loss, Qty IN and Qty OUT.
+- **Export to Excel** on that form, which saves one workbook with three sheets: the detail list, a quantity table (one column per grade, G1 to G13) and a loss table in the same layout.
+
+Re-importing the inventory file updates the grade and loss of waybills that are already in the database.
+
 ## Daily workflow
 
 1. **Dashboard → Upload Excel → Browse… → Import.** Leave *File type* on **Auto**: a file with an `آخر حدث` column is treated as a status update, anything else as an inventory list.
@@ -73,7 +93,7 @@ erDiagram
 | `tblProducts` | `ProductID`, unique `ProductDescription` | Shipment contents. `ProductCode` is the part after the last `\` (`G9-L1`). | `وصف محتويات الشحنة` |
 | `tblEventTypes` | `EventID`, unique `EventKey` | Carrier events. `IsInWarehouse` is True only for the two IN events. | `آخر حدث` |
 | `tblOrders` | `OrderID`, unique `ReferenceNo` | One row per reference number | `رقم المرجع`, `رقم المرجع الثانوي` |
-| `tblOrderDetails` | `DetailID`, unique `Waybill` | **One row per waybill (the inventory item):** current event, `InWarehouse`, quantity | `بوليصة الشحن` / `رقم التتبع` |
+| `tblOrderDetails` | `DetailID`, unique `Waybill` | **One row per waybill (the inventory item):** current event, `InWarehouse`, quantity, `GradeCode` (G1 to G13), `LossQty` (the n in `-Ln`) | `بوليصة الشحن` / `رقم التتبع` |
 | `tblStatusHistory` | `HistoryID` | Every change of event: from, to, IN/OUT before and after, and which file it came from | n/a |
 | `tblImportBatches` | `BatchID` | One row per uploaded file, with its counts | n/a |
 | `tblUnmatched` | `UnmatchedID` | Status rows whose waybill is not in the database | n/a |
@@ -88,11 +108,11 @@ All queries are listed in [`sql/02_queries.sql`](sql/02_queries.sql).
 
 | Group | Queries |
 |---|---|
-| Import, inventory list | `qryImp_ClearStageMaster` → `qryImp_AppendProducts` → `qryImp_AppendOrders` → `qryImp_UpdateOrdersSecondaryRef` → `qryImp_AppendDetails` |
+| Import, inventory list | `qryImp_ClearStageMaster` → `qryImp_AppendProducts` → `qryImp_AppendOrders` → `qryImp_UpdateOrdersSecondaryRef` → `qryImp_AppendDetails` → `qryImp_UpdateDetailsGrade` |
 | Import, status update | `qryImp_ClearStageStatus` → `qryImp_AppendEventTypes` → `qryImp_AppendCities` → `qryImp_AppendCustomers` → `qryImp_AppendUnmatched` → `qryImp_AppendHistory` → `qryImp_UpdateDetailsStatus` → `qryImp_UpdateOrdersCustomer` → `qryImp_UpdateOrdersCity` |
 | Maintenance | `qryAct_RecalcInWarehouse` (re-applies the rule to every waybill; runs on each status import), `qryAct_PurgeOldUnmatched` (deletes rows older than 90 days) |
 | Lists for forms | `qryShipmentsList`, `qryShipmentHistory`, `qryEventTypesList`, `qryImportBatchesList` |
-| Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
+| Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryRpt_ByGrade`, `qryRpt_ByConsigneeGrade`, `qryRpt_ConsigneeGradeQty` (crosstab), `qryRpt_ConsigneeGradeLoss` (crosstab), `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
 
 ## VBA modules
 
@@ -111,14 +131,21 @@ Forms and the dashboard are described in [`docs/forms-layout.md`](docs/forms-lay
 
 `samples/` contains a small file of each kind. Regenerate them with `python access/tools/make_samples.py`.
 
-1. Import `master_inventory_sample.xlsx`. You should get **6 new waybills**, IN 6, OUT 0.
+1. Import `master_inventory_sample.xlsx`. You should get **9 new waybills**, IN 9, OUT 0.
 2. Import `status_update_sample.xlsx`. You should get:
-   - 7 rows read and 1 duplicate (the last row is kept)
-   - **5 status changed**
+   - 10 rows read and 1 duplicate (the last row is kept)
+   - **8 status changed**
    - **1 not found** (`EBUXSL2079999999`)
    - 1 new event type (`قيد التوصيل`, added as OUT)
-   - This file: IN 2, OUT 3
-   - Inventory now: **IN 3** (two IN events, plus `EBUXSL2079500004`, which was not in the status file) and **OUT 3**
+   - This file: IN 3, OUT 5
+   - Inventory now: **IN 4** (three IN events, plus `EBUXSL2079700003`, which was not in the status file) and **OUT 5**
+3. Open **Consignee x grade**. You should see:
+
+   | Consignee | Grade | Qty | Loss | Qty IN | Qty OUT |
+   |---|---|---|---|---|---|
+   | (no consignee yet) | G9 | 1 | 0 | 1 | 0 |
+   | ثانوية منار العلم الأهلية - مسارات - M174562 | G1 | 5 | 4 | 2 | 3 |
+   | متوسطة حائل - مسارات - M174100 | G9 | 1 | 1 | 1 | 0 |
 
 ## Editing the SQL
 

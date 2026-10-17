@@ -28,7 +28,7 @@ CREATE TABLE tblOrders (OrderID COUNTER CONSTRAINT PK_Orders PRIMARY KEY, Refere
 
 CREATE UNIQUE INDEX UX_Orders_Ref ON tblOrders (ReferenceNo);
 
-CREATE TABLE tblOrderDetails (DetailID COUNTER CONSTRAINT PK_OrderDetails PRIMARY KEY, Waybill TEXT(50) NOT NULL, OrderID LONG NOT NULL, ProductID LONG, Quantity LONG DEFAULT 1, CurrentEventID LONG, InWarehouse YESNO DEFAULT -1, LastUpdated DATETIME DEFAULT Now(), LastBatchID LONG, CreatedOn DATETIME DEFAULT Now(),
+CREATE TABLE tblOrderDetails (DetailID COUNTER CONSTRAINT PK_OrderDetails PRIMARY KEY, Waybill TEXT(50) NOT NULL, OrderID LONG NOT NULL, ProductID LONG, Quantity LONG DEFAULT 1, GradeCode TEXT(10), LossQty LONG DEFAULT 0, CurrentEventID LONG, InWarehouse YESNO DEFAULT -1, LastUpdated DATETIME DEFAULT Now(), LastBatchID LONG, CreatedOn DATETIME DEFAULT Now(),
     CONSTRAINT FK_Details_Orders FOREIGN KEY (OrderID) REFERENCES tblOrders (OrderID) ON DELETE CASCADE,
     CONSTRAINT FK_Details_Products FOREIGN KEY (ProductID) REFERENCES tblProducts (ProductID),
     CONSTRAINT FK_Details_Events FOREIGN KEY (CurrentEventID) REFERENCES tblEventTypes (EventID),
@@ -49,7 +49,7 @@ CREATE TABLE tblUnmatched (UnmatchedID COUNTER CONSTRAINT PK_Unmatched PRIMARY K
 
 CREATE INDEX IX_Unmatched_Waybill ON tblUnmatched (Waybill);
 
-CREATE TABLE tblStage_Master (StageID COUNTER CONSTRAINT PK_StageMaster PRIMARY KEY, BatchID LONG, Waybill TEXT(50) NOT NULL, ReferenceNo TEXT(50), Contents TEXT(255), ProductCode TEXT(50), SecondaryRef TEXT(100));
+CREATE TABLE tblStage_Master (StageID COUNTER CONSTRAINT PK_StageMaster PRIMARY KEY, BatchID LONG, Waybill TEXT(50) NOT NULL, ReferenceNo TEXT(50), Contents TEXT(255), ProductCode TEXT(50), SecondaryRef TEXT(100), GradeCode TEXT(10), LossQty LONG DEFAULT 0);
 
 CREATE UNIQUE INDEX UX_StageMaster_Waybill ON tblStage_Master (Waybill);
 

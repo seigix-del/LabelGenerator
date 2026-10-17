@@ -33,6 +33,7 @@ Public Sub BuildInventoryDatabase(Optional ByVal dropExistingTables As Boolean =
 
     If dropExistingTables Then DropTables
     CreateTables
+    UpgradeSchema                    ' add columns introduced after the first release
     DBEngine.Idle dbRefreshCache     ' make ADO-created tables visible to DAO
     SeedData
     CreateQueries
@@ -82,7 +83,7 @@ Private Sub CreateTables()
         "CONSTRAINT FK_Orders_Batches FOREIGN KEY (CreatedBatchID) REFERENCES tblImportBatches (BatchID))"
     RunDDL "", "CREATE UNIQUE INDEX UX_Orders_Ref ON tblOrders (ReferenceNo)"
 
-    RunDDL "tblOrderDetails", "CREATE TABLE tblOrderDetails (DetailID COUNTER CONSTRAINT PK_OrderDetails PRIMARY KEY, Waybill TEXT(50) NOT NULL, OrderID LONG NOT NULL, ProductID LONG, Quantity LONG DEFAULT 1, CurrentEventID LONG, InWarehouse YESNO DEFAULT -1, LastUpdated DATETIME DEFAULT Now(), LastBatchID LONG, CreatedOn DATETIME DEFAULT Now(), " & _
+    RunDDL "tblOrderDetails", "CREATE TABLE tblOrderDetails (DetailID COUNTER CONSTRAINT PK_OrderDetails PRIMARY KEY, Waybill TEXT(50) NOT NULL, OrderID LONG NOT NULL, ProductID LONG, Quantity LONG DEFAULT 1, GradeCode TEXT(10), LossQty LONG DEFAULT 0, CurrentEventID LONG, InWarehouse YESNO DEFAULT -1, LastUpdated DATETIME DEFAULT Now(), LastBatchID LONG, CreatedOn DATETIME DEFAULT Now(), " & _
         "CONSTRAINT FK_Details_Orders FOREIGN KEY (OrderID) REFERENCES tblOrders (OrderID) ON DELETE CASCADE, " & _
         "CONSTRAINT FK_Details_Products FOREIGN KEY (ProductID) REFERENCES tblProducts (ProductID), " & _
         "CONSTRAINT FK_Details_Events FOREIGN KEY (CurrentEventID) REFERENCES tblEventTypes (EventID), " & _
@@ -101,7 +102,7 @@ Private Sub CreateTables()
     RunDDL "", "CREATE INDEX IX_Unmatched_Waybill ON tblUnmatched (Waybill)"
 
     ' --- staging (raw rows of the last uploaded file) ----------------------
-    RunDDL "tblStage_Master", "CREATE TABLE tblStage_Master (StageID COUNTER CONSTRAINT PK_StageMaster PRIMARY KEY, BatchID LONG, Waybill TEXT(50) NOT NULL, ReferenceNo TEXT(50), Contents TEXT(255), ProductCode TEXT(50), SecondaryRef TEXT(100))"
+    RunDDL "tblStage_Master", "CREATE TABLE tblStage_Master (StageID COUNTER CONSTRAINT PK_StageMaster PRIMARY KEY, BatchID LONG, Waybill TEXT(50) NOT NULL, ReferenceNo TEXT(50), Contents TEXT(255), ProductCode TEXT(50), SecondaryRef TEXT(100), GradeCode TEXT(10), LossQty LONG DEFAULT 0)"
     RunDDL "", "CREATE UNIQUE INDEX UX_StageMaster_Waybill ON tblStage_Master (Waybill)"
 
     RunDDL "tblStage_Status", "CREATE TABLE tblStage_Status (StageID COUNTER CONSTRAINT PK_StageStatus PRIMARY KEY, BatchID LONG, Waybill TEXT(50) NOT NULL, LastEvent TEXT(150), LastEventKey TEXT(150), CityName TEXT(100), ConsigneeName TEXT(255), CustomerCode TEXT(50))"
@@ -122,6 +123,27 @@ Private Sub RunDDL(ByVal tableName As String, ByVal sql As String)
     End If
     If skipping Then Exit Sub
     CurrentProject.Connection.Execute sql
+End Sub
+
+' Databases built before grades/losses existed get the new columns here.
+Private Sub UpgradeSchema()
+    EnsureColumn "tblOrderDetails", "GradeCode", "TEXT(10)"
+    EnsureColumn "tblOrderDetails", "LossQty", "LONG DEFAULT 0"
+    EnsureColumn "tblStage_Master", "GradeCode", "TEXT(10)"
+    EnsureColumn "tblStage_Master", "LossQty", "LONG DEFAULT 0"
+    CurrentProject.Connection.Execute "UPDATE tblOrderDetails SET LossQty = 0 WHERE LossQty Is Null"
+    On Error Resume Next             ' index may already exist
+    CurrentProject.Connection.Execute "CREATE INDEX IX_Details_Grade ON tblOrderDetails (GradeCode)"
+End Sub
+
+Private Sub EnsureColumn(ByVal tableName As String, ByVal columnName As String, ByVal columnType As String)
+    Dim fld As DAO.Field
+    CurrentDb.TableDefs.Refresh
+    For Each fld In CurrentDb.TableDefs(tableName).Fields
+        If fld.Name = columnName Then Exit Sub
+    Next fld
+    CurrentProject.Connection.Execute "ALTER TABLE " & tableName & " ADD COLUMN " & columnName & " " & columnType
+    Debug.Print "added column: "; tableName; "."; columnName
 End Sub
 
 Private Function TableExists(ByVal tableName As String) As Boolean
@@ -179,7 +201,9 @@ Private Sub CreateQueries()
     SaveQuery "qryImp_AppendProducts", "INSERT INTO tblProducts (ProductDescription, ProductCode) SELECT s.Contents, First(s.ProductCode) AS FirstCode FROM tblStage_Master AS s LEFT JOIN tblProducts AS p ON s.Contents = p.ProductDescription WHERE p.ProductID Is Null AND s.Contents Is Not Null GROUP BY s.Contents"
     SaveQuery "qryImp_AppendOrders", "INSERT INTO tblOrders (ReferenceNo, SecondaryRef, CreatedBatchID) SELECT s.ReferenceNo, First(s.SecondaryRef) AS FirstSecRef, First(s.BatchID) AS FirstBatch FROM tblStage_Master AS s LEFT JOIN tblOrders AS o ON s.ReferenceNo = o.ReferenceNo WHERE o.OrderID Is Null AND s.ReferenceNo Is Not Null GROUP BY s.ReferenceNo"
     SaveQuery "qryImp_UpdateOrdersSecondaryRef", "UPDATE tblOrders AS o INNER JOIN tblStage_Master AS s ON o.ReferenceNo = s.ReferenceNo SET o.SecondaryRef = s.SecondaryRef WHERE s.SecondaryRef Is Not Null"
-    SaveQuery "qryImp_AppendDetails", "INSERT INTO tblOrderDetails (Waybill, OrderID, ProductID, Quantity, InWarehouse, LastBatchID) SELECT s.Waybill, o.OrderID, p.ProductID, 1, True, s.BatchID FROM ((tblStage_Master AS s INNER JOIN tblOrders AS o ON s.ReferenceNo = o.ReferenceNo) LEFT JOIN tblProducts AS p ON s.Contents = p.ProductDescription) LEFT JOIN tblOrderDetails AS d ON s.Waybill = d.Waybill WHERE d.DetailID Is Null"
+    SaveQuery "qryImp_AppendDetails", "INSERT INTO tblOrderDetails (Waybill, OrderID, ProductID, Quantity, GradeCode, LossQty, InWarehouse, LastBatchID) SELECT s.Waybill, o.OrderID, p.ProductID, 1, s.GradeCode, IIf(s.LossQty Is Null, 0, s.LossQty), True, s.BatchID FROM ((tblStage_Master AS s INNER JOIN tblOrders AS o ON s.ReferenceNo = o.ReferenceNo) LEFT JOIN tblProducts AS p ON s.Contents = p.ProductDescription) LEFT JOIN tblOrderDetails AS d ON s.Waybill = d.Waybill WHERE d.DetailID Is Null"
+
+    SaveQuery "qryImp_UpdateDetailsGrade", "UPDATE tblOrderDetails AS d INNER JOIN tblStage_Master AS s ON d.Waybill = s.Waybill SET d.GradeCode = s.GradeCode, d.LossQty = IIf(s.LossQty Is Null, 0, s.LossQty)"
 
     ' ---- import: status file ---------------------------------------------
     SaveQuery "qryImp_ClearStageStatus", "DELETE FROM tblStage_Status"
@@ -197,7 +221,7 @@ Private Sub CreateQueries()
     SaveQuery "qryAct_PurgeOldUnmatched", "DELETE FROM tblUnmatched WHERE RecordedOn < DateAdd('d', -90, Date())"
 
     ' ---- data entry / lists ----------------------------------------------
-    SaveQuery "qryShipmentsList", "SELECT d.DetailID, d.Waybill, o.ReferenceNo, o.SecondaryRef, p.ProductDescription, p.ProductCode, d.Quantity, e.EventName, d.InWarehouse, IIf(d.InWarehouse, 'IN', 'OUT') AS Location, ci.CityName, cu.CustomerName, cu.CustomerCode, d.LastUpdated " & _
+    SaveQuery "qryShipmentsList", "SELECT d.DetailID, d.Waybill, o.ReferenceNo, o.SecondaryRef, p.ProductDescription, p.ProductCode, d.GradeCode, d.LossQty, d.Quantity, e.EventName, d.InWarehouse, IIf(d.InWarehouse, 'IN', 'OUT') AS Location, ci.CityName, cu.CustomerName, cu.CustomerCode, d.LastUpdated " & _
         "FROM ((((tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblProducts AS p ON d.ProductID = p.ProductID) LEFT JOIN tblEventTypes AS e ON d.CurrentEventID = e.EventID) LEFT JOIN tblCities AS ci ON o.CityID = ci.CityID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
         "ORDER BY d.Waybill"
     SaveQuery "qryShipmentHistory", "SELECT h.HistoryID, h.DetailID, d.Waybill, pe.EventName AS FromEvent, ne.EventName AS ToEvent, IIf(h.WasInWarehouse, 'IN', 'OUT') AS FromLocation, IIf(h.IsInWarehouse, 'IN', 'OUT') AS ToLocation, h.RecordedOn, b.FileName " & _
@@ -211,6 +235,20 @@ Private Sub CreateQueries()
     SaveQuery "qryRpt_ByEvent", "SELECT IIf(e.EventName Is Null, '(no status yet)', e.EventName) AS EventLabel, IIf(d.InWarehouse, 'IN', 'OUT') AS Location, Sum(d.Quantity) AS Qty FROM tblOrderDetails AS d LEFT JOIN tblEventTypes AS e ON d.CurrentEventID = e.EventID GROUP BY IIf(e.EventName Is Null, '(no status yet)', e.EventName), IIf(d.InWarehouse, 'IN', 'OUT'), e.SortOrder ORDER BY e.SortOrder, Sum(d.Quantity) DESC"
     SaveQuery "qryRpt_ByProduct", "SELECT IIf(p.ProductDescription Is Null, '(unknown)', p.ProductDescription) AS Product, Sum(IIf(d.InWarehouse, d.Quantity, 0)) AS InQty, Sum(IIf(d.InWarehouse, 0, d.Quantity)) AS OutQty, Sum(d.Quantity) AS TotalQty FROM tblOrderDetails AS d LEFT JOIN tblProducts AS p ON d.ProductID = p.ProductID GROUP BY IIf(p.ProductDescription Is Null, '(unknown)', p.ProductDescription) ORDER BY Sum(IIf(d.InWarehouse, d.Quantity, 0)) DESC"
     SaveQuery "qryRpt_ByCity", "SELECT IIf(c.CityName Is Null, '(unknown)', c.CityName) AS City, Sum(IIf(d.InWarehouse, d.Quantity, 0)) AS InQty, Sum(IIf(d.InWarehouse, 0, d.Quantity)) AS OutQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCities AS c ON o.CityID = c.CityID GROUP BY IIf(c.CityName Is Null, '(unknown)', c.CityName) ORDER BY Sum(IIf(d.InWarehouse, d.Quantity, 0)) DESC"
+    ' Grades: a plain G<n> row counts 1 towards that grade's quantity; a G<n>-L<k>
+    ' row is a loss row - it adds k to Loss and nothing to the quantity.
+    SaveQuery "qryRpt_ByGrade", "SELECT IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty " & _
+        "FROM tblOrderDetails AS d GROUP BY IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)))"
+    SaveQuery "qryRpt_ByConsigneeGrade", "SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty " & _
+        "FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
+        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) " & _
+        "ORDER BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)))"
+    SaveQuery "qryRpt_ConsigneeGradeQty", "TRANSFORM Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS TotalQty " & _
+        "FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
+        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13')"
+    SaveQuery "qryRpt_ConsigneeGradeLoss", "TRANSFORM Sum(d.LossQty) AS Loss SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, Sum(d.LossQty) AS TotalLoss " & _
+        "FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
+        "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) PIVOT d.GradeCode IN ('G1','G2','G3','G4','G5','G6','G7','G8','G9','G10','G11','G12','G13')"
     SaveQuery "qryRpt_InWarehouse", "SELECT Waybill, ReferenceNo, SecondaryRef, ProductDescription, EventName, CityName, CustomerName, LastUpdated FROM qryShipmentsList WHERE InWarehouse = True"
     SaveQuery "qryRpt_OutOfWarehouse", "SELECT Waybill, ReferenceNo, SecondaryRef, ProductDescription, EventName, CityName, CustomerName, LastUpdated FROM qryShipmentsList WHERE InWarehouse = False"
     SaveQuery "qryRpt_LastStatusBatch", "SELECT TOP 1 * FROM tblImportBatches WHERE ImportType = 'Status' ORDER BY BatchID DESC"
@@ -253,6 +291,10 @@ Private Sub CreateForms()
         Array("BatchID", "ImportType", "ImportedOn", "RowsRead", "RowsInserted", "RowsUpdated", "RowsUnmatched", "RowsSkipped", "FileInCount", "FileOutCount", "FileName"), _
         Array("Batch", "Type", "Imported", "Read", "New", "Changed", "Unmatched", "Skipped", "File IN", "File OUT", "File"), _
         Array(1.4, 1.8, 3.2, 1.4, 1.4, 1.6, 1.8, 1.6, 1.6, 1.6, 7)
+    BuildListForm FRM_GRADES, "Quantity and loss by consignee and grade (G1-G13)", "qryRpt_ByConsigneeGrade", _
+        Array("Consignee", "CustomerCode", "Grade", "Qty", "Loss", "InQty", "OutQty"), _
+        Array(HeaderAliases(COL_CONSIGNEE)(0), "Code", "Grade", "Qty", "Loss", "Qty IN", "Qty OUT"), _
+        Array(9, 2.4, 2, 1.8, 1.8, 1.8, 1.8), "=Exp_ConsigneeGrades()", "Export to Excel"
 End Sub
 
 ' ---- frmMainMenu (dashboard) -------------------------------------------
@@ -294,13 +336,13 @@ Private Sub BuildMainMenu()
     ctl.ColumnHeads = True
     ctl.ColumnWidths = CStr(7 * TW) & ";" & CStr(2 * TW) & ";" & CStr(2 * TW)
 
-    AddLabel frm, acDetail, "lblByProduct", "IN / OUT by product", 13 * TW, 5.4 * TW, 8 * TW, True
+    AddLabel frm, acDetail, "lblByGrade", "Quantity and loss by grade", 13 * TW, 5.4 * TW, 8 * TW, True
     Set ctl = CreateControl(frm.Name, acListBox, acDetail, , , 13 * TW, 6 * TW, 12.5 * TW, 6 * TW)
-    ctl.Name = "lstByProduct"
-    ctl.RowSource = "qryRpt_ByProduct"
-    ctl.ColumnCount = 4
+    ctl.Name = "lstByGrade"
+    ctl.RowSource = "qryRpt_ByGrade"
+    ctl.ColumnCount = 5
     ctl.ColumnHeads = True
-    ctl.ColumnWidths = CStr(6.5 * TW) & ";" & CStr(2 * TW) & ";" & CStr(2 * TW) & ";" & CStr(2 * TW)
+    ctl.ColumnWidths = CStr(3 * TW) & ";" & CStr(2.2 * TW) & ";" & CStr(2.2 * TW) & ";" & CStr(2.2 * TW) & ";" & CStr(2.2 * TW)
 
     ' Menu buttons (two rows)
     Dim btns As Variant
@@ -311,6 +353,7 @@ Private Sub BuildMainMenu()
         Array("btnOut", "OUT of warehouse", "=Nav_OpenOutOfWarehouse()"), _
         Array("btnEvents", "Event rules", "=Nav_OpenEventTypes()"), _
         Array("btnUnmatched", "Unmatched", "=Nav_OpenUnmatched()"), _
+        Array("btnGrades", "Consignee x grade", "=Nav_OpenConsigneeGrades()"), _
         Array("btnHistory", "Import history", "=Nav_OpenImportHistory()"), _
         Array("btnExpIn", "Export IN list", "=Exp_InWarehouse()"), _
         Array("btnExpOut", "Export OUT list", "=Exp_OutOfWarehouse()"), _
@@ -365,9 +408,9 @@ Private Sub BuildShipmentsForm()
     Dim frm As Form, ctl As Control
     Dim flds As Variant, caps As Variant, wid As Variant
 
-    flds = Array("Waybill", "ReferenceNo", "SecondaryRef", "ProductDescription", "EventName", "Location", "CityName", "CustomerName", "LastUpdated")
-    caps = Array("Waybill", "Reference", "Secondary ref", "Contents", "Last event", "Loc.", "City", HeaderAliases(COL_CONSIGNEE)(0), "Updated")
-    wid = Array(4, 2.4, 3.2, 5.5, 3.6, 1.3, 2.4, 6.5, 3)
+    flds = Array("Waybill", "ReferenceNo", "SecondaryRef", "ProductDescription", "GradeCode", "LossQty", "EventName", "Location", "CityName", "CustomerName", "LastUpdated")
+    caps = Array("Waybill", "Reference", "Secondary ref", "Contents", "Grade", "Loss", "Last event", "Loc.", "City", HeaderAliases(COL_CONSIGNEE)(0), "Updated")
+    wid = Array(4, 2.4, 3.2, 5.5, 1.5, 1.2, 3.6, 1.3, 2.4, 6.5, 3)
 
     Set frm = BuildContinuous("qryShipmentsList", "Shipments", flds, caps, wid, 2.6)
 

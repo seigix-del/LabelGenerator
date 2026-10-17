@@ -219,7 +219,8 @@ Private Sub StageMaster(ByVal db As DAO.Database, ByRef data As Variant, _
                         ByVal headerRow As Long, ByRef res As ImportResult)
     Dim cWay As Long, cRef As Long, cCont As Long, cSec As Long
     Dim rows As Object, r As Long, wb As String, k As Variant
-    Dim rs As DAO.Recordset, cont As String
+    Dim rs As DAO.Recordset, cont As String, sec As String
+    Dim grade As String, loss As Long
 
     cWay = FindColumn(data, headerRow, COL_WAYBILL)
     cRef = FindColumn(data, headerRow, COL_REFERENCE)
@@ -245,6 +246,10 @@ Private Sub StageMaster(ByVal db As DAO.Database, ByRef data As Variant, _
     For Each k In rows.Keys
         r = rows(k)
         cont = CellText(data, r, cCont)
+        sec = CellText(data, r, cSec)
+        ' Grade/loss from the contents; fall back to the secondary reference
+        ' (e.g. "ASR-SEP30-G9") when the contents carry no code.
+        If Not ParseGradeLoss(cont, grade, loss) Then ParseGradeLoss sec, grade, loss
         rs.AddNew
         rs!BatchID = res.BatchID
         rs!Waybill = Left$(k, 50)
@@ -252,7 +257,9 @@ Private Sub StageMaster(ByVal db As DAO.Database, ByRef data As Variant, _
         rs!ReferenceNo = Left$(IIf(Len(CellText(data, r, cRef)) > 0, CellText(data, r, cRef), k), 50)
         rs!Contents = NullIfEmpty(Left$(cont, 255))
         rs!ProductCode = NullIfEmpty(ParseProductCode(cont))
-        rs!SecondaryRef = NullIfEmpty(Left$(CellText(data, r, cSec), 100))
+        rs!SecondaryRef = NullIfEmpty(Left$(sec, 100))
+        rs!GradeCode = NullIfEmpty(grade)
+        rs!LossQty = loss
         rs.Update
     Next k
     rs.Close
@@ -264,6 +271,7 @@ Private Sub ProcessMaster(ByVal db As DAO.Database, ByRef res As ImportResult)
     RunAction db, "qryImp_AppendOrders"
     RunAction db, "qryImp_UpdateOrdersSecondaryRef"
     res.RowsInserted = RunAction(db, "qryImp_AppendDetails")
+    RunAction db, "qryImp_UpdateDetailsGrade"           ' re-imports refresh grade/loss
     res.RowsExisting = res.RowsStaged - res.RowsInserted
 End Sub
 
