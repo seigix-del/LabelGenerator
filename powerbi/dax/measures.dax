@@ -22,25 +22,25 @@ No Grade Waybills = CALCULATE(COUNTROWS(Shipments), ISBLANK(Shipments[Grade])) +
 Last Status File Date = MAX(Shipments[StatusFileDate])
 
 // [Grade stock] format: #,0
-G Total = SUM(Shipments[GQty])
+G Total = SUM(Shipments[GQty]) + 0
 
 // [Grade stock] format: #,0
-G IN = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = TRUE())
+G IN = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = TRUE()) + 0
 
 // [Grade stock] format: #,0
-G OUT = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = FALSE())
+G OUT = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = FALSE()) + 0
 
 // [Grade stock] format: #,0
 G Remaining = [G Total] - [G OUT]
 
 // [Grade stock] format: #,0
-L Total = SUM(Shipments[LossQty])
+L Total = SUM(Shipments[LossQty]) + 0
 
 // [Grade stock] format: #,0
-L IN = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = TRUE())
+L IN = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = TRUE()) + 0
 
 // [Grade stock] format: #,0
-L OUT = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = FALSE())
+L OUT = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = FALSE()) + 0
 
 // [Grade stock] format: #,0
 L Remaining = [L Total] - [L OUT]

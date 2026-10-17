@@ -31,7 +31,7 @@ You need **Power BI Desktop** (2024 or newer, Windows).
 3. Open `InventoryTracker.pbip`.
 4. Go to **Home → Transform data → Edit parameters**. Set `MasterFolder` and `StatusFolder` to your two folders. To try the samples, point them at `powerbi\samples\Master` and `powerbi\samples\Status`.
 5. Click **Refresh**.
-6. Build the report pages (next section), then **File → Save as → .pbix** if you want a single file.
+6. **File → Save as → .pbix** if you want a single file.
 
 **If the project will not open.** It was generated as text and could not be test-opened in Power BI here. If that happens, build the model by hand. It takes about 10 minutes:
 1. In a new report, open **Transform data**.
@@ -66,31 +66,19 @@ StatusHistory   (every status row of every file)
 
 ## Report pages
 
-The project has the five pages below, but they are empty: you add the visuals in Desktop. Each one is a few drag-and-drops.
+The project already contains these pages and visuals:
 
-**1. Dashboard**
-- **Cards:** `IN Waybills` (green), `OUT Waybills` (red), `Total Waybills`, `% IN`, `Unmatched Waybills`, `Last Status File Date`.
-- **Clustered bar chart:** axis `Shipments[LastEventLabel]`, legend `Shipments[Location]`, values `Total Waybills`.
-- **Matrix:** rows `Grades[Grade]`, values G Total, G IN, G OUT, G Remaining, L Total, L IN, L OUT, L Remaining. This is the same table as the Access dashboard.
-- **Slicers:** `Shipments[Consignee]`, `Shipments[City]`.
+| Page | Visuals |
+|---|---|
+| **Dashboard** | Cards: IN, OUT, Total, % IN, Unmatched, last status file date. Bar chart of waybills by last event (IN/OUT). Grade stock matrix. Consignee and City slicers. |
+| **Grade stock** | Matrix with a row per grade and the TOTAL row: G Total, G IN, G OUT, G Remaining, L Total, L IN, L OUT, L Remaining. Cards for no-grade waybills and total waybills. Consignee and City slicers. |
+| **Consignee x grade** | Matrix with consignees (and their code) as rows, the grades as columns, and G Total and L Total as values. Location and City slicers. |
+| **Shipments** | Every waybill with grade, row type, last event, IN/OUT, city, consignee and status date. Location, Grade and Consignee slicers. |
+| **Unmatched** | Waybills that are in a status file but not in the inventory list. |
 
-**2. Grade stock**, the equivalent of the Access *Grade stock* form
-- **Matrix:** rows `Grades[Grade]`, then the 8 G and L measures in this order: G Total, G IN, G OUT, G Remaining, L Total, L IN, L OUT, L Remaining.
-- On the `Grade` field, choose **Show items with no data** so every grade appears.
-- Turn on **Row subtotals** to get the TOTAL row.
-- Add a card for `No Grade Waybills`.
+The G and L measures return 0 rather than blank, so every grade (G1–G9, G11–G13) is listed even before it has any items. You can restyle or move anything in Desktop.
 
-**3. Consignee x grade**
-- **Matrix:** rows `Shipments[Consignee]` (and `CustomerCode`), columns `Grades[Grade]`, values `G Total` and `L Total`.
-- Add `G Remaining` and `L Remaining` as values too if you want the remaining stock per consignee.
-
-**4. Shipments**
-- **Table** with Waybill, Reference, SecondaryRef, Contents, Grade, RowType, LastEventLabel, Location, City, Consignee and the status file date.
-- **Slicers:** `Location`, `Grade`, `Consignee`.
-- **Conditional formatting** on `Location`: font colour by rules, `IN` = green, `OUT` = red.
-
-**5. Unmatched**
-- **Table** of `Unmatched` (Waybill, LastEvent, CityName, ConsigneeName, SourceFile, FileDate).
+**The pages show nothing until the data loads.** Set both folder parameters (step 4 above) and click **Refresh**. If a visual shows an error, open **Transform data**: the query with a yellow warning shows the reason, usually a folder that doesn't exist.
 
 ## Check with the sample files
 
@@ -106,4 +94,4 @@ With the parameters pointing at `samples\Master` and `samples\Status`, you shoul
 
 ## Editing
 
-The `.pq` files in `queries/` are the source. After you change one, run `python powerbi/tools/build_pbip.py`. It regenerates the semantic model and `dax/measures.dax`, and it **recreates the report folder**. So once you've built visuals in Desktop, change queries in Desktop instead of re-running the script.
+The `.pq` files in `queries/` are the source. After you change one, run `python powerbi/tools/build_pbip.py`. It regenerates the semantic model and `dax/measures.dax`, and it **recreates the report folder**. So once you've changed the visuals in Desktop, change queries in Desktop instead of re-running the script.

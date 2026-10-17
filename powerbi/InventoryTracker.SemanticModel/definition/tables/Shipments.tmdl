@@ -36,17 +36,17 @@ table Shipments
 		displayFolder: Inventory
 		lineageTag: 1ac0d58d-918d-52dc-8bc7-cfce21e05b8d
 
-	measure 'G Total' = SUM(Shipments[GQty])
+	measure 'G Total' = SUM(Shipments[GQty]) + 0
 		formatString: #,0
 		displayFolder: Grade stock
 		lineageTag: c4426150-00e3-5d10-869a-7529ad92df93
 
-	measure 'G IN' = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = TRUE())
+	measure 'G IN' = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = TRUE()) + 0
 		formatString: #,0
 		displayFolder: Grade stock
 		lineageTag: b293178b-08c6-5ee7-9d8a-f5a6ecb9ae15
 
-	measure 'G OUT' = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = FALSE())
+	measure 'G OUT' = CALCULATE(SUM(Shipments[GQty]), Shipments[InWarehouse] = FALSE()) + 0
 		formatString: #,0
 		displayFolder: Grade stock
 		lineageTag: ec7cf917-7602-5ad6-9c8c-cf63f8bcb1bf
@@ -56,17 +56,17 @@ table Shipments
 		displayFolder: Grade stock
 		lineageTag: 3d3e4796-113c-5b17-b124-ebc4db816c28
 
-	measure 'L Total' = SUM(Shipments[LossQty])
+	measure 'L Total' = SUM(Shipments[LossQty]) + 0
 		formatString: #,0
 		displayFolder: Grade stock
 		lineageTag: e1054cac-d36c-55cd-8435-f695ad54c793
 
-	measure 'L IN' = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = TRUE())
+	measure 'L IN' = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = TRUE()) + 0
 		formatString: #,0
 		displayFolder: Grade stock
 		lineageTag: 6f5a4ff1-e28f-5a4f-866f-7eff4a2d99d4
 
-	measure 'L OUT' = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = FALSE())
+	measure 'L OUT' = CALCULATE(SUM(Shipments[LossQty]), Shipments[InWarehouse] = FALSE()) + 0
 		formatString: #,0
 		displayFolder: Grade stock
 		lineageTag: 7dadde2c-1025-526b-8bc5-c248407deead

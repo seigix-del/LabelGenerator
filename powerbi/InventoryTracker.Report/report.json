@@ -12,7 +12,107 @@
       "width": 1280.0,
       "name": "ReportSection0",
       "ordinal": 0,
-      "visualContainers": []
+      "visualContainers": [
+        {
+          "x": 10,
+          "y": 5,
+          "z": 0,
+          "width": 1260,
+          "height": 50,
+          "config": "{\"name\": \"b4b3b58733bb5f3f9ee4\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 5, \"z\": 0, \"width\": 1260, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Inventory dashboard\", \"textStyle\": {\"fontSize\": \"20pt\", \"fontWeight\": \"bold\", \"color\": \"#002060\"}}]}]}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 60,
+          "z": 1,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"97264e070b4a573a883e\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.IN Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"IN Waybills\"}, \"Name\": \"Shipments.IN Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"objects\": {\"labels\": [{\"properties\": {\"color\": {\"solid\": {\"color\": {\"expr\": {\"Literal\": {\"Value\": \"'#00B050'\"}}}}}}}]}, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'IN Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 220,
+          "y": 60,
+          "z": 2,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"180e5a34f4105c0da1aa\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 220, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.OUT Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"OUT Waybills\"}, \"Name\": \"Shipments.OUT Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"objects\": {\"labels\": [{\"properties\": {\"color\": {\"solid\": {\"color\": {\"expr\": {\"Literal\": {\"Value\": \"'#FF0000'\"}}}}}}}]}, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'OUT Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 430,
+          "y": 60,
+          "z": 3,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"521499a56ac3567bbb31\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 430, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Total Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Total Waybills\"}, \"Name\": \"Shipments.Total Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Total Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 640,
+          "y": 60,
+          "z": 4,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"62b60c16226450e4a925\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.% IN\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"% IN\"}, \"Name\": \"Shipments.% IN\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'% IN'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 850,
+          "y": 60,
+          "z": 5,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"aa6fcf59ea7256258653\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 850, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Unmatched Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Unmatched Waybills\"}, \"Name\": \"Shipments.Unmatched Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Unmatched Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 1060,
+          "y": 60,
+          "z": 6,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"14fa70dff68a5660b316\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 1060, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Last Status File Date\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Last Status File Date\"}, \"Name\": \"Shipments.Last Status File Date\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Last Status File Date'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 185,
+          "z": 7,
+          "width": 500,
+          "height": 525,
+          "config": "{\"name\": \"b9f1eec77bc75ca2b407\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 185, \"z\": 0, \"width\": 500, \"height\": 525}}], \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"Shipments.LastEventLabel\"}], \"Series\": [{\"queryRef\": \"Shipments.Location\"}], \"Y\": [{\"queryRef\": \"Shipments.Total Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"LastEventLabel\"}, \"Name\": \"Shipments.LastEventLabel\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Location\"}, \"Name\": \"Shipments.Location\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Total Waybills\"}, \"Name\": \"Shipments.Total Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Waybills by last event'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 520,
+          "y": 185,
+          "z": 8,
+          "width": 750,
+          "height": 370,
+          "config": "{\"name\": \"277ee18af2e8538d9341\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 520, \"y\": 185, \"z\": 0, \"width\": 750, \"height\": 370}}], \"singleVisual\": {\"visualType\": \"pivotTable\", \"projections\": {\"Rows\": [{\"queryRef\": \"Grades.Grade\", \"active\": true}], \"Values\": [{\"queryRef\": \"Shipments.G Total\"}, {\"queryRef\": \"Shipments.G IN\"}, {\"queryRef\": \"Shipments.G OUT\"}, {\"queryRef\": \"Shipments.G Remaining\"}, {\"queryRef\": \"Shipments.L Total\"}, {\"queryRef\": \"Shipments.L IN\"}, {\"queryRef\": \"Shipments.L OUT\"}, {\"queryRef\": \"Shipments.L Remaining\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Grades\", \"Type\": 0}, {\"Name\": \"t1\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Grade\"}, \"Name\": \"Grades.Grade\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G Total\"}, \"Name\": \"Shipments.G Total\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G IN\"}, \"Name\": \"Shipments.G IN\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G OUT\"}, \"Name\": \"Shipments.G OUT\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G Remaining\"}, \"Name\": \"Shipments.G Remaining\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L Total\"}, \"Name\": \"Shipments.L Total\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L IN\"}, \"Name\": \"Shipments.L IN\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L OUT\"}, \"Name\": \"Shipments.L OUT\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L Remaining\"}, \"Name\": \"Shipments.L Remaining\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Grade stock'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 520,
+          "y": 565,
+          "z": 9,
+          "width": 370,
+          "height": 145,
+          "config": "{\"name\": \"77b0f3e17acf563c924a\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 520, \"y\": 565, \"z\": 0, \"width\": 370, \"height\": 145}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Consignee\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Consignee\"}, \"Name\": \"Shipments.Consignee\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Consignee'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 900,
+          "y": 565,
+          "z": 10,
+          "width": 370,
+          "height": 145,
+          "config": "{\"name\": \"18bd798e856d50458c7c\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 900, \"y\": 565, \"z\": 0, \"width\": 370, \"height\": 145}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.City\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"City\"}, \"Name\": \"Shipments.City\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'City'\"}}}}}]}}}",
+          "filters": "[]"
+        }
+      ]
     },
     {
       "config": "{}",
@@ -23,7 +123,62 @@
       "width": 1280.0,
       "name": "ReportSection1",
       "ordinal": 1,
-      "visualContainers": []
+      "visualContainers": [
+        {
+          "x": 10,
+          "y": 5,
+          "z": 0,
+          "width": 1260,
+          "height": 50,
+          "config": "{\"name\": \"363bfa77a4b055b18dd5\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 5, \"z\": 0, \"width\": 1260, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Grade stock - G and L (Remaining = Total - OUT)\", \"textStyle\": {\"fontSize\": \"20pt\", \"fontWeight\": \"bold\", \"color\": \"#002060\"}}]}]}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 60,
+          "z": 1,
+          "width": 1260,
+          "height": 520,
+          "config": "{\"name\": \"133d666c85f552588d1f\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 60, \"z\": 0, \"width\": 1260, \"height\": 520}}], \"singleVisual\": {\"visualType\": \"pivotTable\", \"projections\": {\"Rows\": [{\"queryRef\": \"Grades.Grade\", \"active\": true}], \"Values\": [{\"queryRef\": \"Shipments.G Total\"}, {\"queryRef\": \"Shipments.G IN\"}, {\"queryRef\": \"Shipments.G OUT\"}, {\"queryRef\": \"Shipments.G Remaining\"}, {\"queryRef\": \"Shipments.L Total\"}, {\"queryRef\": \"Shipments.L IN\"}, {\"queryRef\": \"Shipments.L OUT\"}, {\"queryRef\": \"Shipments.L Remaining\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Grades\", \"Type\": 0}, {\"Name\": \"t1\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Grade\"}, \"Name\": \"Grades.Grade\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G Total\"}, \"Name\": \"Shipments.G Total\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G IN\"}, \"Name\": \"Shipments.G IN\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G OUT\"}, \"Name\": \"Shipments.G OUT\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"G Remaining\"}, \"Name\": \"Shipments.G Remaining\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L Total\"}, \"Name\": \"Shipments.L Total\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L IN\"}, \"Name\": \"Shipments.L IN\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L OUT\"}, \"Name\": \"Shipments.L OUT\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"L Remaining\"}, \"Name\": \"Shipments.L Remaining\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Grade stock'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 595,
+          "z": 2,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"4387af02538a5dc4afec\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 595, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.No Grade Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"No Grade Waybills\"}, \"Name\": \"Shipments.No Grade Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'No Grade Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 220,
+          "y": 595,
+          "z": 3,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"8603c4b0eb6c5df78693\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 220, \"y\": 595, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Total Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Total Waybills\"}, \"Name\": \"Shipments.Total Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Total Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 430,
+          "y": 595,
+          "z": 4,
+          "width": 420,
+          "height": 115,
+          "config": "{\"name\": \"3d8909d4028452c4bee2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 430, \"y\": 595, \"z\": 0, \"width\": 420, \"height\": 115}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Consignee\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Consignee\"}, \"Name\": \"Shipments.Consignee\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Consignee'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 860,
+          "y": 595,
+          "z": 5,
+          "width": 410,
+          "height": 115,
+          "config": "{\"name\": \"d3a4264d0f8657dd8b14\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 860, \"y\": 595, \"z\": 0, \"width\": 410, \"height\": 115}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.City\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"City\"}, \"Name\": \"Shipments.City\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'City'\"}}}}}]}}}",
+          "filters": "[]"
+        }
+      ]
     },
     {
       "config": "{}",
@@ -34,7 +189,44 @@
       "width": 1280.0,
       "name": "ReportSection2",
       "ordinal": 2,
-      "visualContainers": []
+      "visualContainers": [
+        {
+          "x": 10,
+          "y": 5,
+          "z": 0,
+          "width": 1260,
+          "height": 50,
+          "config": "{\"name\": \"94cd7730200a5ae19f11\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 5, \"z\": 0, \"width\": 1260, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Consignee x grade (G Total and L Total per grade)\", \"textStyle\": {\"fontSize\": \"20pt\", \"fontWeight\": \"bold\", \"color\": \"#002060\"}}]}]}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 60,
+          "z": 1,
+          "width": 1260,
+          "height": 520,
+          "config": "{\"name\": \"39cc24dd75ee53d894e5\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 60, \"z\": 0, \"width\": 1260, \"height\": 520}}], \"singleVisual\": {\"visualType\": \"pivotTable\", \"projections\": {\"Rows\": [{\"queryRef\": \"Shipments.Consignee\", \"active\": true}, {\"queryRef\": \"Shipments.CustomerCode\", \"active\": true}], \"Columns\": [{\"queryRef\": \"Grades.Grade\"}], \"Values\": [{\"queryRef\": \"Shipments.G Total\"}, {\"queryRef\": \"Shipments.L Total\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}, {\"Name\": \"t1\", \"Entity\": \"Grades\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Consignee\"}, \"Name\": \"Shipments.Consignee\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"CustomerCode\"}, \"Name\": \"Shipments.CustomerCode\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t1\"}}, \"Property\": \"Grade\"}, \"Name\": \"Grades.Grade\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"G Total\"}, \"Name\": \"Shipments.G Total\"}, {\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"L Total\"}, \"Name\": \"Shipments.L Total\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Consignee x grade'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 595,
+          "z": 2,
+          "width": 300,
+          "height": 115,
+          "config": "{\"name\": \"ebc712876c7350d5a49f\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 595, \"z\": 0, \"width\": 300, \"height\": 115}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Location\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Location\"}, \"Name\": \"Shipments.Location\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Location'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 320,
+          "y": 595,
+          "z": 3,
+          "width": 400,
+          "height": 115,
+          "config": "{\"name\": \"fce72532f494539eb21b\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 320, \"y\": 595, \"z\": 0, \"width\": 400, \"height\": 115}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.City\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"City\"}, \"Name\": \"Shipments.City\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'City'\"}}}}}]}}}",
+          "filters": "[]"
+        }
+      ]
     },
     {
       "config": "{}",
@@ -45,7 +237,62 @@
       "width": 1280.0,
       "name": "ReportSection3",
       "ordinal": 3,
-      "visualContainers": []
+      "visualContainers": [
+        {
+          "x": 10,
+          "y": 5,
+          "z": 0,
+          "width": 1260,
+          "height": 50,
+          "config": "{\"name\": \"2733875341b55e7ba896\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 5, \"z\": 0, \"width\": 1260, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Shipments\", \"textStyle\": {\"fontSize\": \"20pt\", \"fontWeight\": \"bold\", \"color\": \"#002060\"}}]}]}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 60,
+          "z": 1,
+          "width": 250,
+          "height": 120,
+          "config": "{\"name\": \"8a57e5fb4983516b827f\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 60, \"z\": 0, \"width\": 250, \"height\": 120}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Location\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Location\"}, \"Name\": \"Shipments.Location\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Location'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 270,
+          "y": 60,
+          "z": 2,
+          "width": 250,
+          "height": 120,
+          "config": "{\"name\": \"268cd8724a81563da1c3\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 270, \"y\": 60, \"z\": 0, \"width\": 250, \"height\": 120}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Grades.Grade\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Grades\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Grade\"}, \"Name\": \"Grades.Grade\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Grade'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 530,
+          "y": 60,
+          "z": 3,
+          "width": 470,
+          "height": 120,
+          "config": "{\"name\": \"c1f763d36d475ea8b9a0\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 530, \"y\": 60, \"z\": 0, \"width\": 470, \"height\": 120}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Consignee\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Consignee\"}, \"Name\": \"Shipments.Consignee\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Consignee'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 1010,
+          "y": 65,
+          "z": 4,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"ae7bfb4208785c7cb3cb\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 1010, \"y\": 65, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Total Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Total Waybills\"}, \"Name\": \"Shipments.Total Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Total Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 190,
+          "z": 5,
+          "width": 1260,
+          "height": 520,
+          "config": "{\"name\": \"cf8b9ac78b855e0fb383\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 190, \"z\": 0, \"width\": 1260, \"height\": 520}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Waybill\"}, {\"queryRef\": \"Shipments.Reference\"}, {\"queryRef\": \"Shipments.SecondaryRef\"}, {\"queryRef\": \"Shipments.Contents\"}, {\"queryRef\": \"Shipments.Grade\"}, {\"queryRef\": \"Shipments.RowType\"}, {\"queryRef\": \"Shipments.LastEventLabel\"}, {\"queryRef\": \"Shipments.Location\"}, {\"queryRef\": \"Shipments.City\"}, {\"queryRef\": \"Shipments.Consignee\"}, {\"queryRef\": \"Shipments.StatusFileDate\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Waybill\"}, \"Name\": \"Shipments.Waybill\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Reference\"}, \"Name\": \"Shipments.Reference\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"SecondaryRef\"}, \"Name\": \"Shipments.SecondaryRef\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Contents\"}, \"Name\": \"Shipments.Contents\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Grade\"}, \"Name\": \"Shipments.Grade\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"RowType\"}, \"Name\": \"Shipments.RowType\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"LastEventLabel\"}, \"Name\": \"Shipments.LastEventLabel\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Location\"}, \"Name\": \"Shipments.Location\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"City\"}, \"Name\": \"Shipments.City\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Consignee\"}, \"Name\": \"Shipments.Consignee\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"StatusFileDate\"}, \"Name\": \"Shipments.StatusFileDate\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        }
+      ]
     },
     {
       "config": "{}",
@@ -56,7 +303,35 @@
       "width": 1280.0,
       "name": "ReportSection4",
       "ordinal": 4,
-      "visualContainers": []
+      "visualContainers": [
+        {
+          "x": 10,
+          "y": 5,
+          "z": 0,
+          "width": 1260,
+          "height": 50,
+          "config": "{\"name\": \"8032291810ab50db892d\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 5, \"z\": 0, \"width\": 1260, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Unmatched - in a status file but not in the inventory list\", \"textStyle\": {\"fontSize\": \"20pt\", \"fontWeight\": \"bold\", \"color\": \"#002060\"}}]}]}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 60,
+          "z": 1,
+          "width": 200,
+          "height": 110,
+          "config": "{\"name\": \"38cb1a59ae525227ad6a\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 60, \"z\": 0, \"width\": 200, \"height\": 110}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"Shipments.Unmatched Waybills\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Shipments\", \"Type\": 0}], \"Select\": [{\"Measure\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Unmatched Waybills\"}, \"Name\": \"Shipments.Unmatched Waybills\"}]}, \"drillFilterOtherVisuals\": true, \"objects\": {\"labels\": [{\"properties\": {\"color\": {\"solid\": {\"color\": {\"expr\": {\"Literal\": {\"Value\": \"'#FF0000'\"}}}}}}}]}, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Unmatched Waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        },
+        {
+          "x": 10,
+          "y": 185,
+          "z": 2,
+          "width": 1260,
+          "height": 525,
+          "config": "{\"name\": \"96265c6f4f2751afb7be\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 10, \"y\": 185, \"z\": 0, \"width\": 1260, \"height\": 525}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"Unmatched.Waybill\"}, {\"queryRef\": \"Unmatched.LastEvent\"}, {\"queryRef\": \"Unmatched.CityName\"}, {\"queryRef\": \"Unmatched.ConsigneeName\"}, {\"queryRef\": \"Unmatched.SourceFile\"}, {\"queryRef\": \"Unmatched.FileDate\"}]}, \"prototypeQuery\": {\"Version\": 2, \"From\": [{\"Name\": \"t0\", \"Entity\": \"Unmatched\", \"Type\": 0}], \"Select\": [{\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"Waybill\"}, \"Name\": \"Unmatched.Waybill\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"LastEvent\"}, \"Name\": \"Unmatched.LastEvent\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"CityName\"}, \"Name\": \"Unmatched.CityName\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"ConsigneeName\"}, \"Name\": \"Unmatched.ConsigneeName\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"SourceFile\"}, \"Name\": \"Unmatched.SourceFile\"}, {\"Column\": {\"Expression\": {\"SourceRef\": {\"Source\": \"t0\"}}, \"Property\": \"FileDate\"}, \"Name\": \"Unmatched.FileDate\"}]}, \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Unmatched waybills'\"}}}}}]}}}",
+          "filters": "[]"
+        }
+      ]
     }
   ]
 }
