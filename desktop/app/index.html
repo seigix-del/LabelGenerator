@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventory Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="drag"></div>
+      <div class="brand">
+        <div class="brand-name">Inventory Tracker</div>
+        <div class="brand-sub">Waybills · IN / OUT · Grades</div>
+      </div>
+      <nav class="nav" id="nav" aria-label="Pages">
+        <button type="button" data-view="dashboard"><span class="ico">◧</span>Dashboard</button>
+        <button type="button" data-view="grades"><span class="ico">▤</span>Grade stock</button>
+        <button type="button" data-view="consignees"><span class="ico">▦</span>Consignee × grade</button>
+        <button type="button" data-view="shipments"><span class="ico">≡</span>Shipments<span class="count" id="nav-shipments"></span></button>
+        <button type="button" data-view="unmatched"><span class="ico">⚠︎</span>Unmatched<span class="count" id="nav-unmatched"></span></button>
+        <button type="button" data-view="files"><span class="ico">⇪</span>Files<span class="count" id="nav-files"></span></button>
+      </nav>
+      <div class="side-foot">
+        <button type="button" class="btn primary wide" data-action="upload">Upload Excel files…</button>
+        <p class="hint" id="side-hint"></p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="toolbar">
+        <div class="toolbar-title">
+          <h1 id="page-title">Dashboard</h1>
+          <span class="sample-pill" id="sample-pill" hidden>Sample data</span>
+        </div>
+        <div class="toolbar-tools" id="toolbar-tools"></div>
+      </header>
+      <section class="view" id="view" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls" multiple hidden>
+  <div class="drop-overlay" id="drop-overlay" hidden>
+    <div class="drop-card">Drop inventory or status Excel files to add them</div>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="../node_modules/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="sample-data.js"></script>
+  <script src="logic.js"></script>
+  <script src="ui.js"></script>
+</body>
+</html>

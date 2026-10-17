@@ -1,0 +1,48 @@
+name: Build macOS app
+
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", ".github/workflows/build-macos.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: desktop
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test inventory logic
+        run: npm test
+
+      - name: Package app (Apple Silicon + Intel)
+        run: npm run package:mac
+
+      - name: Ad-hoc sign and zip
+        run: |
+          for a in arm64 x64; do
+            app="dist/Inventory Tracker-darwin-$a/Inventory Tracker.app"
+            codesign --force --deep --sign - "$app"
+            ditto -c -k --keepParent "$app" "dist/InventoryTracker-mac-$a.zip"
+          done
+
+      - name: Upload apps
+        uses: actions/upload-artifact@v4
+        with:
+          name: InventoryTracker-macOS
+          path: desktop/dist/InventoryTracker-mac-*.zip

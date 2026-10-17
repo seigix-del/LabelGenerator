@@ -1,0 +1,21 @@
+{
+  "name": "inventory-tracker",
+  "productName": "Inventory Tracker",
+  "version": "1.0.0",
+  "description": "Shipment inventory dashboard: upload inventory and status Excel files, see IN/OUT and grade stock.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/logic.test.js",
+    "package:mac": "electron-packager . \"Inventory Tracker\" --platform=darwin --arch=arm64,x64 --out=dist --overwrite --icon=build/icon.icns --app-bundle-id=com.seigix.inventorytracker --app-category-type=public.app-category.business --ignore=^/dist --ignore=^/test --ignore=^/build/icon.png"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "xlsx": "0.18.5"
+  },
+  "devDependencies": {
+    "@electron/packager": "18.3.6",
+    "electron": "33.4.11"
+  }
+}
