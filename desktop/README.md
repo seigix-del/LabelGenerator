@@ -5,7 +5,8 @@ A desktop app version of the inventory dashboard. You add your Excel files, and 
 It uses the same rules as the Access and Power BI versions:
 
 - **IN** when the last event (`آخر حدث`) is `جاهزة للالتقاط` or `استلام من العميل`, or the waybill has no status yet. **Every other event is OUT.**
-- **Grades** G1–G9 and G11–G13 are read from `وصف محتويات الشحنة`, after `\`, `/` or `//`. A `G2` row counts 1 on the **G** side. A `G2-L4` row counts 4 on the **L** side only. Remaining = Total − OUT, worked out separately for G and L.
+- **Grades** G1–G9 and G11–G13 are read from `وصف محتويات الشحنة`, after `\`, `/` or `//`. A `G2` row counts 1 on the **G** side. A `G2-L4` row counts 4 on the **L** side only. A one- or two-letter prefix is ignored, so `MG3-L1` counts as G3 with a loss of 1. Remaining = Total − OUT, worked out separately for G and L.
+- Event names are matched loosely. Hidden characters, Arabic presentation forms, diacritics, hamza variants and extra spaces are ignored, and an event that contains `جاهزة للالتقاط` or `استلام من العميل` also counts as IN.
 - The consignee comes from `اسم المرسل إليه`.
 - When a waybill is in several files, the newest file wins (then the last row in that file).
 

@@ -299,7 +299,7 @@
       </div>
       <div class="rules">
         <div class="panel panel-body"><div class="rule"><h3>IN / OUT</h3><p>IN when آخر حدث is جاهزة للالتقاط or استلام من العميل, or the waybill has no status yet. Every other event is OUT.</p></div></div>
-        <div class="panel panel-body"><div class="rule"><h3>Grades</h3><p>From وصف محتويات الشحنة after \\, / or //. G1–G9 and G11–G13. A G2 row counts 1 on the G side; G2‑L4 counts 4 on the L side only.</p></div></div>
+        <div class="panel panel-body"><div class="rule"><h3>Grades</h3><p>From وصف محتويات الشحنة after \\, / or //. G1–G9 and G11–G13. A G2 row counts 1 on the G side; G2‑L4 counts 4 on the L side only. A letter prefix is ignored (MG3‑L1 = G3, loss 1).</p></div></div>
         <div class="panel panel-body"><div class="rule"><h3>Consignee</h3><p>اسم المرسل إليه from the newest status file. The code at the end (e.g. M174562) is shown separately.</p></div></div>
       </div>`;
   }

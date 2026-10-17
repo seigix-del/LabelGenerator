@@ -3,6 +3,7 @@
 //  - IN warehouse = last event is "جاهزة للالتقاط" or "استلام من العميل"; anything else is OUT.
 //    A waybill with no status yet counts as IN (it is on the inventory list).
 //  - Grades G1-G9, G11-G13 (no G10). "G2" = 1 item on the G side; "G2-L4" = 4 items on the L side only.
+//    A 1-2 letter prefix is ignored: "MG3-L1" counts as G3 with a loss of 1.
 //  - When a waybill appears in several files, the newest file wins, then the last row in it.
 (function (root) {
   "use strict";
@@ -26,16 +27,20 @@
   function normText(v) {
     if (v === null || v === undefined) return "";
     return String(v)
-      .replace(/[‎‏‪-‮ـ﻿]/g, "")
+      .normalize("NFKC") // Arabic presentation forms (ﺟﺎﻫﺰﺓ, ﻻ) -> normal letters
+      .replace(/[​-‏‪-‮⁦-⁩ـ﻿]/g, "") // invisible marks, tatweel
       .replace(/[\r\n\t ]/g, " ")
       .replace(/ {2,}/g, " ")
       .trim();
   }
 
+  // Loose matching key: also drops Arabic diacritics and every space.
   function normKey(v) {
     return normText(v)
-      .replace(/[آأإ]/g, "ا")
-      .replace(/ى/g, "ي")
+      .replace(/[ً-ٰٟ]/g, "")
+      .replace(/ /g, "")
+      .replace(/[آأإٱ]/g, "ا")
+      .replace(/[ىی]/g, "ي")
       .replace(/ة/g, "ه")
       .toLowerCase();
   }
@@ -48,6 +53,14 @@
   for (const logical of LOGICAL) for (const h of ALIASES[logical]) HEADER_MAP.set(normKey(h), logical);
   const IN_KEYS = new Set(IN_EVENTS.map(normKey));
 
+  // IN when the event is (or contains) one of the IN events, after loose normalisation.
+  function isInEvent(event) {
+    const k = normKey(event);
+    if (!k) return false;
+    for (const inKey of IN_KEYS) if (k === inKey || k.includes(inKey)) return true;
+    return false;
+  }
+
   function headerLogical(cell) {
     return HEADER_MAP.get(normKey(cell)) || null;
   }
@@ -56,11 +69,12 @@
   function parseGradeLoss(text) {
     const s = normText(text);
     if (!s) return null;
-    const re = /\b(G\d{1,2})(?:\s*-\s*L\s*(\d{1,5}))?\b/gi;
+    // optional 1-2 letter prefix (MG3), the grade, then optional -L<n>; never inside a longer word
+    const re = /(?:^|[^A-Za-z0-9])[A-Za-z]{0,2}?G(\d{1,2})(?:\s*-\s*L\s*(\d{1,5}))?(?![A-Za-z0-9])/gi;
     let m, last = null;
     while ((m = re.exec(s)) !== null) last = m;
     if (!last) return null;
-    const grade = last[1].toUpperCase();
+    const grade = "G" + parseInt(last[1], 10);
     if (!GRADES.includes(grade)) return null;
     return { grade, loss: last[2] ? parseInt(last[2], 10) : 0 };
   }
@@ -142,7 +156,7 @@
       const gl = parseGradeLoss(m.Contents) || parseGradeLoss(m.SecondaryRef);
       const s = status.get(wb);
       const loss = gl ? gl.loss : 0;
-      const inW = s ? IN_KEYS.has(normKey(s.LastEvent)) : true;
+      const inW = s ? isInEvent(s.LastEvent) : true;
       shipments.push({
         waybill: wb,
         reference: m.ReferenceNo || wb,
@@ -241,7 +255,7 @@
     return { consignees, colTotals, grand };
   }
 
-  const api = { IN_EVENTS, GRADES, NO_STATUS, NO_CONSIGNEE, normText, normKey, normWaybill, headerLogical,
+  const api = { IN_EVENTS, GRADES, NO_STATUS, NO_CONSIGNEE, normText, normKey, normWaybill, headerLogical, isInEvent,
     parseGradeLoss, customerCode, readSheet, parseWorkbook, compute, gradeStock, summary, byEvent, consigneeMatrix };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.Inventory = api;

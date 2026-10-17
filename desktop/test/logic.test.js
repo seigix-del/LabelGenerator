@@ -8,7 +8,7 @@ const L = require("../app/logic.js");
 // grade parser
 const cases = [
   ["نقطة توزيع المجاردة \\\\ G9-L1", "G9", 1], ["x / G1", "G1", 0], ["x // G1-L4", "G1", 4],
-  ["ASR-SEP30-G9", "G9", 0], ["G13 - L 2", "G13", 2], ["PG13", null], ["x \\\\ G10", null],
+  ["ASR-SEP30-G9", "G9", 0], ["G13 - L 2", "G13", 2], ["x \\\\ G10", null],
   ["g2-l300", "G2", 300], ["G2-L", "G2", 0], ["G1-L4x", "G1", 0],
 ];
 for (const [t, g, l] of cases) {
@@ -52,3 +52,14 @@ const r2 = L.compute([files[0], newer, older]).shipments.find((s) => s.waybill =
 assert.strictEqual(r2.location, "OUT");
 
 console.log("All logic tests passed.");
+
+// --- real-file cases reported from the app ---
+assert.deepStrictEqual(L.parseGradeLoss("نقطة توزيع شرورة \\\\ MG3-L1"), { grade: "G3", loss: 1 });
+assert.deepStrictEqual(L.parseGradeLoss("نقطة توزيع \\\\ MG3"), { grade: "G3", loss: 0 });
+assert.deepStrictEqual(L.parseGradeLoss("G05"), { grade: "G5", loss: 0 });
+assert.strictEqual(L.parseGradeLoss("x \\\\ MG10-L2"), null);
+assert.strictEqual(L.parseGradeLoss("BIGG5"), null);
+for (const t of ["جاهزة للالتقاط", "ﺟﺎﻫﺰﺓ ﻟﻼﻟﺘﻘﺎﻁ", "جاهزةٌ للالتقاط", "جاهزة‌ للالتقاط", "جاهزة للإلتقاط",
+                 "جاهزه  للالتقاط ", "استلام من العميل", "جاهزة للالتقاط - فرع نجران"]) assert(L.isInEvent(t), t);
+for (const t of ["التسليم النهائي", "قيد التوصيل", ""]) assert(!L.isInEvent(t), t);
+console.log("Real-file cases passed.");
