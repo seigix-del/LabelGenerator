@@ -1,0 +1,130 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.6.0/schema.json",
+  "name": "96265c6f4f2751afb7be",
+  "position": {
+    "x": 10,
+    "y": 185,
+    "z": 2000,
+    "height": 525,
+    "width": 1260,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Unmatched"
+                    }
+                  },
+                  "Property": "Waybill"
+                }
+              },
+              "queryRef": "Unmatched.Waybill",
+              "nativeQueryRef": "Waybill"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Unmatched"
+                    }
+                  },
+                  "Property": "LastEvent"
+                }
+              },
+              "queryRef": "Unmatched.LastEvent",
+              "nativeQueryRef": "LastEvent"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Unmatched"
+                    }
+                  },
+                  "Property": "CityName"
+                }
+              },
+              "queryRef": "Unmatched.CityName",
+              "nativeQueryRef": "CityName"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Unmatched"
+                    }
+                  },
+                  "Property": "ConsigneeName"
+                }
+              },
+              "queryRef": "Unmatched.ConsigneeName",
+              "nativeQueryRef": "ConsigneeName"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Unmatched"
+                    }
+                  },
+                  "Property": "SourceFile"
+                }
+              },
+              "queryRef": "Unmatched.SourceFile",
+              "nativeQueryRef": "SourceFile"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Unmatched"
+                    }
+                  },
+                  "Property": "FileDate"
+                }
+              },
+              "queryRef": "Unmatched.FileDate",
+              "nativeQueryRef": "FileDate"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Unmatched waybills'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

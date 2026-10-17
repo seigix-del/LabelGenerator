@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.6.0/schema.json",
+  "name": "ae7bfb4208785c7cb3cb",
+  "position": {
+    "x": 1010,
+    "y": 65,
+    "z": 4000,
+    "height": 110,
+    "width": 200,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Total Waybills"
+                }
+              },
+              "queryRef": "Shipments.Total Waybills",
+              "nativeQueryRef": "Total Waybills"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Total Waybills'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

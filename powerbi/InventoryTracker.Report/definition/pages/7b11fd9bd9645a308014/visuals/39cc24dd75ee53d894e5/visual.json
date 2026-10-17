@@ -1,0 +1,127 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.6.0/schema.json",
+  "name": "39cc24dd75ee53d894e5",
+  "position": {
+    "x": 10,
+    "y": 60,
+    "z": 1000,
+    "height": 520,
+    "width": 1260,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Consignee"
+                }
+              },
+              "queryRef": "Shipments.Consignee",
+              "nativeQueryRef": "Consignee",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "CustomerCode"
+                }
+              },
+              "queryRef": "Shipments.CustomerCode",
+              "nativeQueryRef": "CustomerCode",
+              "active": true
+            }
+          ]
+        },
+        "Columns": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Grades"
+                    }
+                  },
+                  "Property": "Grade"
+                }
+              },
+              "queryRef": "Grades.Grade",
+              "nativeQueryRef": "Grade",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "G Total"
+                }
+              },
+              "queryRef": "Shipments.G Total",
+              "nativeQueryRef": "G Total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "L Total"
+                }
+              },
+              "queryRef": "Shipments.L Total",
+              "nativeQueryRef": "L Total"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Consignee x grade'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

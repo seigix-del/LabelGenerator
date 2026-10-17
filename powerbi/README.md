@@ -24,16 +24,16 @@ In Power BI there is no upload button. **You drop Excel files into two folders a
 
 ## Open it
 
-You need **Power BI Desktop** (2024 or newer, Windows).
+You need **Power BI Desktop** (2024 or newer, Windows). The project uses the same file layout that Desktop itself saves: TMDL for the model and PBIR for the report. Each page is a folder under `InventoryTracker.Report/definition/pages`, with one `visual.json` per visual.
 
 1. Copy the whole `powerbi` folder to your PC.
-2. If Desktop asks, turn on **File → Options → Preview features → Power BI Project (.pbip) save option** and **Store semantic model using TMDL format**, then restart Desktop. Recent versions have these on already.
-3. Open `InventoryTracker.pbip`.
+2. **Extract the zip first** (right-click → Extract All). Don't open the file from inside the zip. If Desktop says it can't open the project, go to **File → Options → Preview features**, tick **Power BI Project (.pbip) save option**, **Store semantic model using TMDL format** and **Store reports using enhanced metadata format (PBIR)**, then restart Desktop. Recent versions have these on already.
+3. In Desktop, **File → Open → Browse**, choose `InventoryTracker.pbip`. You should see five page tabs: Dashboard, Grade stock, Consignee x grade, Shipments and Unmatched.
 4. Go to **Home → Transform data → Edit parameters**. Set `MasterFolder` and `StatusFolder` to your two folders. To try the samples, point them at `powerbi\samples\Master` and `powerbi\samples\Status`.
 5. Click **Refresh**.
 6. **File → Save as → .pbix** if you want a single file.
 
-**If the project will not open.** It was generated as text and could not be test-opened in Power BI here. If that happens, build the model by hand. It takes about 10 minutes:
+**If the project will not open.** The files were checked against Microsoft's published PBIR JSON schemas, and the model loads in Microsoft's own TMDL parser (the Tabular Object Model library). It still hasn't been opened in Power BI Desktop itself. If that happens, build the model by hand. It takes about 10 minutes:
 1. In a new report, open **Transform data**.
 2. For each file in [`queries/`](queries), create a **Blank query**, open the **Advanced editor**, paste the file and name the query exactly like the file.
 3. Mark `MasterFolder` and `StatusFolder` as parameters. Untick **Enable load** on everything except `Shipments`, `Unmatched`, `StatusHistory` and `Grades`.

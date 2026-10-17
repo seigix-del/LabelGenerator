@@ -150,6 +150,9 @@ def lit(v):
     return {"expr": {"Literal": {"Value": v}}}
 
 
+SCHEMA = "https://developer.microsoft.com/json-schemas/fabric/item/report/definition"
+
+
 class Visual:
     """One visual: type, position, and fields per role ({role: [field, ...]})."""
 
@@ -157,44 +160,35 @@ class Visual:
         self.vtype, self.pos, self.roles = vtype, (x, y, w, h), roles or {}
         self.title, self.color, self.text = title, color, text
 
-    def config(self, name):
-        x, y, w, h = self.pos
-        cfg = {"name": name, "layouts": [{"id": 0, "position": {"x": x, "y": y, "z": 0, "width": w, "height": h}}]}
+    def body(self):
         if self.vtype == "textbox":
-            run = {"value": self.text, "textStyle": {"fontSize": "20pt", "fontWeight": "bold", "color": NAVY}}
-            cfg["singleVisual"] = {"visualType": "textbox", "drillFilterOtherVisuals": True,
-                                   "objects": {"general": [{"properties": {"paragraphs": [{"textRuns": [run]}]}}]}}
-            return cfg
-        aliases, sources, select, projections = {}, [], [], {}
+            run = {"value": self.text, "textStyle": {"fontWeight": "bold", "fontSize": "20pt", "color": NAVY}}
+            return {"visualType": "textbox", "drillFilterOtherVisuals": True,
+                    "objects": {"general": [{"properties": {"paragraphs": [{"textRuns": [run]}]}}]}}
+        state = {}
         for role, fields in self.roles.items():
-            projections[role] = []
+            projections = []
             for table, prop, kind in fields:
-                if table not in aliases:
-                    aliases[table] = f"t{len(aliases)}"
-                    sources.append({"Name": aliases[table], "Entity": table, "Type": 0})
-                ref = f"{table}.{prop}"
-                if ref not in [s["Name"] for s in select]:
-                    select.append({kind: {"Expression": {"SourceRef": {"Source": aliases[table]}}, "Property": prop},
-                                   "Name": ref})
-                projections[role].append({"queryRef": ref, **({"active": True} if role == "Rows" else {})})
-        sv = {"visualType": self.vtype, "projections": projections,
-              "prototypeQuery": {"Version": 2, "From": sources, "Select": select},
-              "drillFilterOtherVisuals": True}
-        vc = {}
-        if self.title:
-            vc["title"] = [{"properties": {"show": lit("true"), "text": lit(f"'{self.title}'")}}]
+                proj = {"field": {kind: {"Expression": {"SourceRef": {"Entity": table}}, "Property": prop}},
+                        "queryRef": f"{table}.{prop}", "nativeQueryRef": prop}
+                if role in ("Rows", "Columns", "Category", "Series") or self.vtype == "slicer":
+                    proj["active"] = True
+                projections.append(proj)
+            state[role] = {"projections": projections}
+        v = {"visualType": self.vtype, "query": {"queryState": state}, "drillFilterOtherVisuals": True}
         if self.color and self.vtype == "card":
-            sv["objects"] = {"labels": [{"properties": {"color": {"solid": {"color": lit(f"'{self.color}'")}}}}]}
-        if vc:
-            sv["vcObjects"] = vc
-        cfg["singleVisual"] = sv
-        return cfg
+            v["objects"] = {"labels": [{"properties": {"color": {"solid": {"color": lit(f"'{self.color}'")}}}}]}
+        if self.title:
+            v["visualContainerObjects"] = {"title": [{"properties": {"show": lit("true"),
+                                                                     "text": lit(f"'{self.title}'")}}]}
+        return v
 
-    def container(self, page, z):
+    def visual_json(self, page, z):
         x, y, w, h = self.pos
         name = uuid.uuid5(NS, f"visual/{page}/{z}").hex[:20]
-        return {"x": x, "y": y, "z": z, "width": w, "height": h,
-                "config": json.dumps(self.config(name), ensure_ascii=False), "filters": "[]"}
+        return name, {"$schema": f"{SCHEMA}/visualContainer/1.6.0/schema.json", "name": name,
+                      "position": {"x": x, "y": y, "z": z * 1000, "height": h, "width": w, "tabOrder": z * 1000},
+                      "visual": self.body()}
 
 
 def card(measure, x, y, color=None):
@@ -275,14 +269,17 @@ def main():
             shutil.rmtree(d)
 
     write(ROOT / f"{NAME}.pbip", json.dumps({
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/pbip/pbipProperties/1.0.0/schema.json",
         "version": "1.0",
         "artifacts": [{"report": {"path": f"{NAME}.Report"}}],
         "settings": {"enableAutoRecovery": True},
     }, indent=2) + "\n")
 
     # --- semantic model (TMDL) ---
-    write(sm / "definition.pbism", json.dumps({"version": "4.0", "settings": {}}, indent=2) + "\n")
-    write(sm / "definition" / "database.tmdl", "database\n\tcompatibilityLevel: 1567\n")
+    write(sm / "definition.pbism", json.dumps({
+        "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/semanticModel/definitionProperties/1.0.0/schema.json",
+        "version": "4.2", "settings": {}}, indent=2) + "\n")
+    write(sm / "definition" / "database.tmdl", "database\n\tcompatibilityLevel: 1601\n")
     model = ["model Model", "\tculture: en-US", "\tdefaultPowerBIDataSourceVersion: powerBI_V3",
              "\tdiscourageImplicitMeasures", "\tsourceQueryCulture: en-US", "\tdataAccessOptions",
              "\t\tlegacyRedirects", "\t\treturnErrorValuesAsNull", "",
@@ -298,22 +295,45 @@ def main():
                 f"\ttoColumn: {tt}.{tc}", ""]
     write(sm / "definition" / "relationships.tmdl", "\n".join(rel))
 
-    # --- report pages with their visuals ---
-    sections = [{
-        "config": "{}", "displayName": title, "displayOption": 1, "filters": "[]",
-        "height": 720.0, "width": 1280.0, "name": f"ReportSection{i}", "ordinal": i,
-        "visualContainers": [v.container(i, z) for z, v in enumerate(visuals)],
-    } for i, (title, visuals) in enumerate(report_pages())]
+    # --- report (PBIR folder layout, as saved by Power BI Desktop) ---
     write(rp / "definition.pbir", json.dumps({
-        "version": "1.0",
-        "datasetReference": {"byPath": {"path": f"../{NAME}.SemanticModel"}, "byConnection": None},
+        "$schema": f"{SCHEMA}Properties/1.0.0/schema.json",
+        "version": "4.0",
+        "datasetReference": {"byPath": {"path": f"../{NAME}.SemanticModel"}},
     }, indent=2) + "\n")
-    write(rp / "report.json", json.dumps({
-        "config": json.dumps({"version": "5.43", "themeCollection": {}, "activeSectionIndex": 0}),
-        "layoutOptimization": 0,
-        "resourcePackages": [],
-        "sections": sections,
-    }, indent=2, ensure_ascii=False) + "\n")
+    d = rp / "definition"
+    write(d / "version.json", json.dumps({"$schema": f"{SCHEMA}/versionMetadata/1.0.0/schema.json",
+                                         "version": "2.0.0"}, indent=2) + "\n")
+    write(d / "report.json", json.dumps({
+        "$schema": f"{SCHEMA}/report/1.2.0/schema.json",
+        "themeCollection": {"baseTheme": {"name": "CY24SU10", "reportVersionAtImport": "5.61",
+                                          "type": "SharedResources"}},
+        "layoutOptimization": "None",
+        "resourcePackages": [{"name": "SharedResources", "type": "SharedResources",
+                              "items": [{"name": "CY24SU10", "path": "BaseThemes/CY24SU10.json",
+                                         "type": "BaseTheme"}]}],
+        "settings": {"useStylableVisualContainerHeader": True, "defaultDrillFilterOtherVisuals": True,
+                     "allowChangeFilterTypes": True, "useEnhancedTooltips": True},
+    }, indent=2) + "\n")
+    theme = rp / "StaticResources" / "SharedResources" / "BaseThemes" / "CY24SU10.json"
+    theme.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(pathlib.Path(__file__).with_name("CY24SU10.json"), theme)
+    page_names = []
+    for i, (title, visuals) in enumerate(report_pages()):
+        pname = uuid.uuid5(NS, f"page/{i}").hex[:20]
+        page_names.append(pname)
+        pd = d / "pages" / pname
+        write(pd / "page.json", json.dumps({
+            "$schema": f"{SCHEMA}/page/1.3.0/schema.json", "name": pname, "displayName": title,
+            "displayOption": "FitToPage", "height": 720, "width": 1280,
+        }, indent=2, ensure_ascii=False) + "\n")
+        for z, v in enumerate(visuals):
+            vname, body = v.visual_json(i, z)
+            write(pd / "visuals" / vname / "visual.json", json.dumps(body, indent=2, ensure_ascii=False) + "\n")
+    write(d / "pages" / "pages.json", json.dumps({
+        "$schema": f"{SCHEMA}/pagesMetadata/1.0.0/schema.json",
+        "pageOrder": page_names, "activePageName": page_names[0],
+    }, indent=2) + "\n")
 
     # --- loose DAX for manual setup ---
     dax = ["// Measures for the Shipments table. Generated by powerbi/tools/build_pbip.py.", ""]

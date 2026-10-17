@@ -1,0 +1,177 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.6.0/schema.json",
+  "name": "277ee18af2e8538d9341",
+  "position": {
+    "x": 520,
+    "y": 185,
+    "z": 8000,
+    "height": 370,
+    "width": 750,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Grades"
+                    }
+                  },
+                  "Property": "Grade"
+                }
+              },
+              "queryRef": "Grades.Grade",
+              "nativeQueryRef": "Grade",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "G Total"
+                }
+              },
+              "queryRef": "Shipments.G Total",
+              "nativeQueryRef": "G Total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "G IN"
+                }
+              },
+              "queryRef": "Shipments.G IN",
+              "nativeQueryRef": "G IN"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "G OUT"
+                }
+              },
+              "queryRef": "Shipments.G OUT",
+              "nativeQueryRef": "G OUT"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "G Remaining"
+                }
+              },
+              "queryRef": "Shipments.G Remaining",
+              "nativeQueryRef": "G Remaining"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "L Total"
+                }
+              },
+              "queryRef": "Shipments.L Total",
+              "nativeQueryRef": "L Total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "L IN"
+                }
+              },
+              "queryRef": "Shipments.L IN",
+              "nativeQueryRef": "L IN"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "L OUT"
+                }
+              },
+              "queryRef": "Shipments.L OUT",
+              "nativeQueryRef": "L OUT"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "L Remaining"
+                }
+              },
+              "queryRef": "Shipments.L Remaining",
+              "nativeQueryRef": "L Remaining"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Grade stock'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

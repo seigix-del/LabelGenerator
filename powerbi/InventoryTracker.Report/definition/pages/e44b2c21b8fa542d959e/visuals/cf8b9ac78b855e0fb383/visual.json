@@ -1,0 +1,200 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.6.0/schema.json",
+  "name": "cf8b9ac78b855e0fb383",
+  "position": {
+    "x": 10,
+    "y": 190,
+    "z": 5000,
+    "height": 520,
+    "width": 1260,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Waybill"
+                }
+              },
+              "queryRef": "Shipments.Waybill",
+              "nativeQueryRef": "Waybill"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Reference"
+                }
+              },
+              "queryRef": "Shipments.Reference",
+              "nativeQueryRef": "Reference"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "SecondaryRef"
+                }
+              },
+              "queryRef": "Shipments.SecondaryRef",
+              "nativeQueryRef": "SecondaryRef"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Contents"
+                }
+              },
+              "queryRef": "Shipments.Contents",
+              "nativeQueryRef": "Contents"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Grade"
+                }
+              },
+              "queryRef": "Shipments.Grade",
+              "nativeQueryRef": "Grade"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "RowType"
+                }
+              },
+              "queryRef": "Shipments.RowType",
+              "nativeQueryRef": "RowType"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "LastEventLabel"
+                }
+              },
+              "queryRef": "Shipments.LastEventLabel",
+              "nativeQueryRef": "LastEventLabel"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Location"
+                }
+              },
+              "queryRef": "Shipments.Location",
+              "nativeQueryRef": "Location"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "City"
+                }
+              },
+              "queryRef": "Shipments.City",
+              "nativeQueryRef": "City"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Consignee"
+                }
+              },
+              "queryRef": "Shipments.Consignee",
+              "nativeQueryRef": "Consignee"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "StatusFileDate"
+                }
+              },
+              "queryRef": "Shipments.StatusFileDate",
+              "nativeQueryRef": "StatusFileDate"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Waybills'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

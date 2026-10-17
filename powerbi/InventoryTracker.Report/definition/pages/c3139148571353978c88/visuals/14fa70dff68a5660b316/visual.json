@@ -1,0 +1,60 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.6.0/schema.json",
+  "name": "14fa70dff68a5660b316",
+  "position": {
+    "x": 1060,
+    "y": 60,
+    "z": 6000,
+    "height": 110,
+    "width": 200,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Shipments"
+                    }
+                  },
+                  "Property": "Last Status File Date"
+                }
+              },
+              "queryRef": "Shipments.Last Status File Date",
+              "nativeQueryRef": "Last Status File Date"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true,
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Last Status File Date'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
