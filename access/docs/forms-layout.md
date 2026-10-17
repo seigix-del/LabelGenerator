@@ -57,7 +57,7 @@ Single form, unbound, 20 × 13 cm.
 +-------------------------------------------------------------+
 | Excel file: [C:\...\status.xlsx                ] [Browse...]|
 | File type:  [Auto  v]  Auto = detect from headers ...       |
-| [ Import ]                                       [ Close ]  |
+| [ Import ]   [ Export grade totals ]             [ Close ]  |
 | Result                                                      |
 | +---------------------------------------------------------+ |
 | | File: status.xlsx (sheet: Sheet1)                       | |
@@ -72,6 +72,7 @@ Single form, unbound, 20 × 13 cm.
 | `txtFilePath` | TextBox | Filled by **Browse…** (`=Imp_Browse()`), but can also be typed |
 | `cboImportType` | ComboBox, value list `Auto;Master;Status`, limited to the list | Defaults to `Auto` |
 | `btnRun` | Button | `=Imp_Run()` |
+| `btnExpGrades` | Button | `=Exp_LastMasterGrades()`: exports the G1 to G13 quantity and loss totals of the last master file |
 | `txtResult` | TextBox, locked, Consolas, vertical scroll bar | Import summary |
 
 Validation in `Imp_Run` and `ValidateImportFile`:

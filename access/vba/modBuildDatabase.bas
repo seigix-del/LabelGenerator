@@ -239,6 +239,8 @@ Private Sub CreateQueries()
     ' row is a loss row - it adds k to Loss and nothing to the quantity.
     SaveQuery "qryRpt_ByGrade", "SELECT IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty " & _
         "FROM tblOrderDetails AS d GROUP BY IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)))"
+    SaveQuery "qryRpt_LastMasterFileByGrade", "SELECT IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode) AS Grade, Sum(IIf(s.LossQty > 0, 0, 1)) AS Qty, Sum(IIf(s.LossQty Is Null, 0, s.LossQty)) AS Loss FROM tblStage_Master AS s " & _
+        "GROUP BY IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode), IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2))) ORDER BY IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2)))"
     SaveQuery "qryRpt_ByConsigneeGrade", "SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty " & _
         "FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID " & _
         "GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) " & _
@@ -392,6 +394,7 @@ Private Sub BuildImportForm()
     AddLabel frm, acDetail, "lblTypeHelp", "Auto = detect from headers (status file has the 'last event' column).", 8.8 * TW, 2.6 * TW, 10.7 * TW
 
     AddButton frm, acDetail, "btnRun", "Import", "=Imp_Run()", 3.5 * TW, 3.6 * TW, 4 * TW
+    AddButton frm, acDetail, "btnExpGrades", "Export grade totals", "=Exp_LastMasterGrades()", 8 * TW, 3.6 * TW, 4.5 * TW
     AddButton frm, acDetail, "btnClose", "Close", "=Nav_CloseActive()", 15.5 * TW, 3.6 * TW, 4 * TW
 
     AddLabel frm, acDetail, "lblResult", "Result", 0.5 * TW, 4.6 * TW, 3 * TW, True

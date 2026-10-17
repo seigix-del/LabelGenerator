@@ -43,18 +43,30 @@ Excel must be installed, because the importer reads workbooks through Excel auto
 
 ## Grades, quantity and loss
 
-The contents column (`وصف محتويات الشحنة`) ends in a grade code, such as `نقطة توزيع المجاردة \\ G1`. The grades are **G1 to G13**.
+The contents column (`وصف محتويات الشحنة`) ends in a grade code after a separator, such as `نقطة توزيع المجاردة \\ G1`, `… / G1` or `… // G1-L4`. Any of `\`, `/` or `//` works. The grades are **G1 to G13**.
 
 | Code in the row | Meaning |
 |---|---|
 | `G1` | **1 item** of grade G1. Each such row (waybill) adds 1 to G1's quantity. |
-| `G1-L4` | A **loss row** for grade G1: **4 items lost**. It adds 4 to G1's loss and **nothing** to the quantity. |
+| `G1-L4` | **Only a loss:** 4 items lost for grade G1. It adds 4 to G1's loss and **nothing** to the quantity. |
 
 Totals are kept per consignee (`اسم المرسل إليه`, from the status file). For example, 5 rows of `G1` and 1 row of `G1-L4` for the same consignee give **G1 quantity 5, loss 4**.
 
 If the contents have no code, the grade is taken from `رقم المرجع الثانوي` instead (for example `ASR-SEP30-G9` gives G9). A waybill that hasn't appeared in a status file yet is listed as *(no consignee yet)*.
 
-Where to see the totals:
+**On every master upload**, the import summary adds up the whole file by grade:
+
+```
+Totals in this file by grade:
+  Grade        Qty     Loss
+  G1             5        4
+  G9             2        1
+  TOTAL          7        5
+```
+
+**Export grade totals** on the upload screen saves the same table to Excel (query `qryRpt_LastMasterFileByGrade`).
+
+Where to see the totals for the whole database:
 - The dashboard list **Quantity and loss by grade**.
 - The **Consignee x grade** form, which shows each consignee and grade with Qty, Loss, Qty IN and Qty OUT.
 - **Export to Excel** on that form, which saves one workbook with three sheets: the detail list, a quantity table (one column per grade, G1 to G13) and a loss table in the same layout.
@@ -112,7 +124,7 @@ All queries are listed in [`sql/02_queries.sql`](sql/02_queries.sql).
 | Import, status update | `qryImp_ClearStageStatus` → `qryImp_AppendEventTypes` → `qryImp_AppendCities` → `qryImp_AppendCustomers` → `qryImp_AppendUnmatched` → `qryImp_AppendHistory` → `qryImp_UpdateDetailsStatus` → `qryImp_UpdateOrdersCustomer` → `qryImp_UpdateOrdersCity` |
 | Maintenance | `qryAct_RecalcInWarehouse` (re-applies the rule to every waybill; runs on each status import), `qryAct_PurgeOldUnmatched` (deletes rows older than 90 days) |
 | Lists for forms | `qryShipmentsList`, `qryShipmentHistory`, `qryEventTypesList`, `qryImportBatchesList` |
-| Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryRpt_ByGrade`, `qryRpt_ByConsigneeGrade`, `qryRpt_ConsigneeGradeQty` (crosstab), `qryRpt_ConsigneeGradeLoss` (crosstab), `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
+| Reports | `qryRpt_InventorySummary`, `qryRpt_ByEvent`, `qryRpt_ByGrade`, `qryRpt_LastMasterFileByGrade`, `qryRpt_ByConsigneeGrade`, `qryRpt_ConsigneeGradeQty` (crosstab), `qryRpt_ConsigneeGradeLoss` (crosstab), `qryRpt_ByProduct`, `qryRpt_ByCity`, `qryRpt_InWarehouse`, `qryRpt_OutOfWarehouse`, `qryRpt_LastStatusBatch`, `qryRpt_LastStatusFileSplit`, `qryRpt_LastStatusChanges`, `qryRpt_UnmatchedAll`, `qryRpt_UnmatchedLastBatch`, `qryRpt_NeverUpdated` |
 
 ## VBA modules
 
@@ -131,7 +143,7 @@ Forms and the dashboard are described in [`docs/forms-layout.md`](docs/forms-lay
 
 `samples/` contains a small file of each kind. Regenerate them with `python access/tools/make_samples.py`.
 
-1. Import `master_inventory_sample.xlsx`. You should get **9 new waybills**, IN 9, OUT 0.
+1. Import `master_inventory_sample.xlsx`. You should get **9 new waybills**, IN 9, OUT 0, and the grade totals **G1: Qty 5, Loss 4** and **G9: Qty 2, Loss 1**. The sample uses the `\\`, `//` and `/` separators.
 2. Import `status_update_sample.xlsx`. You should get:
    - 10 rows read and 1 duplicate (the last row is kept)
    - **8 status changed**

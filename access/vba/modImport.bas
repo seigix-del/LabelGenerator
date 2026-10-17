@@ -41,6 +41,7 @@ Public Type ImportResult
     FileInCount As Long
     FileOutCount As Long
     NewEventTypes As Long
+    GradeSummary As String
 End Type
 
 ' Entry point used by frmImport. Returns True on success and fills summary
@@ -272,6 +273,7 @@ Private Sub ProcessMaster(ByVal db As DAO.Database, ByRef res As ImportResult)
     RunAction db, "qryImp_UpdateOrdersSecondaryRef"
     res.RowsInserted = RunAction(db, "qryImp_AppendDetails")
     RunAction db, "qryImp_UpdateDetailsGrade"           ' re-imports refresh grade/loss
+    res.GradeSummary = GradeTotalsText(db)
     res.RowsExisting = res.RowsStaged - res.RowsInserted
 End Sub
 
@@ -362,6 +364,31 @@ Private Function RunAction(ByVal db As DAO.Database, ByVal queryName As String) 
     qdf.Close
 End Function
 
+' Per-grade totals of the master file just uploaded (all its rows, new and
+' existing): G<n> rows add to Qty, G<n>-L<k> rows add k to Loss.
+Private Function GradeTotalsText(ByVal db As DAO.Database) As String
+    Dim rs As DAO.Recordset, s As String, totQty As Long, totLoss As Long
+    s = "Totals in this file by grade:" & vbCrLf & _
+        "  Grade        Qty     Loss" & vbCrLf
+    Set rs = db.OpenRecordset("qryRpt_LastMasterFileByGrade", dbOpenSnapshot)
+    Do Until rs.EOF
+        s = s & "  " & PadRight(rs!Grade, 10) & PadLeft(rs!Qty, 6) & PadLeft(rs!Loss, 9) & vbCrLf
+        totQty = totQty + Nz(rs!Qty, 0)
+        totLoss = totLoss + Nz(rs!Loss, 0)
+        rs.MoveNext
+    Loop
+    rs.Close
+    GradeTotalsText = s & "  " & PadRight("TOTAL", 10) & PadLeft(totQty, 6) & PadLeft(totLoss, 9) & vbCrLf
+End Function
+
+Private Function PadRight(ByVal v As Variant, ByVal n As Long) As String
+    PadRight = Left$(Nz(v, "") & Space$(n), n)
+End Function
+
+Private Function PadLeft(ByVal v As Variant, ByVal n As Long) As String
+    PadLeft = Right$(Space$(n) & Nz(v, 0), n)
+End Function
+
 Private Function NullIfEmpty(ByVal s As String) As Variant
     If Len(s) = 0 Then NullIfEmpty = Null Else NullIfEmpty = s
 End Function
@@ -387,7 +414,8 @@ Private Function BuildSummary(ByRef res As ImportResult) As String
 
     If res.ImportType = IMPORT_MASTER Then
         s = s & "New waybills added (IN):  " & res.RowsInserted & vbCrLf & _
-                "Already in database:      " & res.RowsExisting & vbCrLf
+                "Already in database:      " & res.RowsExisting & vbCrLf & vbCrLf & _
+                res.GradeSummary
     Else
         s = s & "Status changed:           " & res.RowsChanged & vbCrLf & _
                 "No change:                " & res.RowsUnchanged & vbCrLf & _

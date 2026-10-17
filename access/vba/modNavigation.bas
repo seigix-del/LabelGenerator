@@ -310,6 +310,11 @@ EH:
     Resume ExitHere
 End Function
 
+' Grade / loss totals of the last uploaded master file.
+Public Function Exp_LastMasterGrades() As Boolean
+    ExportQuery "qryRpt_LastMasterFileByGrade", "GradeTotals_" & Format$(Date, "yyyymmdd")
+End Function
+
 Public Function Exp_Unmatched() As Boolean
     ExportQuery "qryRpt_UnmatchedLastBatch", "Unmatched_" & Format$(Date, "yyyymmdd")
 End Function

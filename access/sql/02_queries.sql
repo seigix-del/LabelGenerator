@@ -79,6 +79,9 @@ SELECT IIf(c.CityName Is Null, '(unknown)', c.CityName) AS City, Sum(IIf(d.InWar
 -- qryRpt_ByGrade
 SELECT IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty FROM tblOrderDetails AS d GROUP BY IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)));
 
+-- qryRpt_LastMasterFileByGrade
+SELECT IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode) AS Grade, Sum(IIf(s.LossQty > 0, 0, 1)) AS Qty, Sum(IIf(s.LossQty Is Null, 0, s.LossQty)) AS Loss FROM tblStage_Master AS s GROUP BY IIf(s.GradeCode Is Null, '(no grade)', s.GradeCode), IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2))) ORDER BY IIf(s.GradeCode Is Null, 999, Val(Mid(s.GradeCode, 2)));
+
 -- qryRpt_ByConsigneeGrade
 SELECT IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName) AS Consignee, cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode) AS Grade, Sum(IIf(d.LossQty > 0, 0, d.Quantity)) AS Qty, Sum(d.LossQty) AS Loss, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, d.Quantity, 0))) AS InQty, Sum(IIf(d.LossQty > 0, 0, IIf(d.InWarehouse, 0, d.Quantity))) AS OutQty FROM (tblOrderDetails AS d INNER JOIN tblOrders AS o ON d.OrderID = o.OrderID) LEFT JOIN tblCustomers AS cu ON o.CustomerID = cu.CustomerID GROUP BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), cu.CustomerCode, IIf(d.GradeCode Is Null, '(no grade)', d.GradeCode), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2))) ORDER BY IIf(cu.CustomerName Is Null, '(no consignee yet)', cu.CustomerName), IIf(d.GradeCode Is Null, 999, Val(Mid(d.GradeCode, 2)));
 

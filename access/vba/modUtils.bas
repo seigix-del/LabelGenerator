@@ -72,18 +72,20 @@ Public Function ParseCustomerCode(ByVal consignee As String) As String
     End If
 End Function
 
-' Shipment contents look like "<distribution point> \\ G9-L1".
-' Returns the part after the last backslash (the product / grade code).
+' Shipment contents look like "<distribution point> \\ G9-L1"; the separator
+' may also be "/" or "//". Returns the part after the last separator.
 Public Function ParseProductCode(ByVal contents As String) As String
     Dim p As Long
     p = InStrRev(contents, "\")
+    If InStrRev(contents, "/") > p Then p = InStrRev(contents, "/")
     If p = 0 Then Exit Function
     ParseProductCode = Left$(Trim$(Mid$(contents, p + 1)), 50)
 End Function
 
-' Grade and loss code inside the contents text, e.g. "... \\ G1" or
-' "... \\ G1-L4". G<n> is the grade (G1..G13); -L<n> marks a LOSS row of n
-' items for that grade. The last match in the text wins.
+' Grade and loss code inside the contents text, e.g. "... \\ G1", "... / G1"
+' or "... // G1-L4" (the separator does not matter). G<n> is the grade
+' (G1..G13) and counts 1 item; G<n>-L<k> is ONLY a loss of k items for that
+' grade. The last match in the text wins.
 ' Returns False when the text holds no grade code.
 Public Function ParseGradeLoss(ByVal text As String, ByRef grade As String, ByRef loss As Long) As Boolean
     Static re As Object
